@@ -32,15 +32,17 @@ export type CreationAssetIdentity = {
     resultIndex?: number;
 };
 
-export function creationUploadAccept(mode: CreationMode) {
-    if (mode === "video") return "image/*,video/*,audio/*";
+export function creationUploadAccept(mode: CreationMode, teamMode = false) {
+    if (mode === "audio") return "audio/*";
+    if (mode === "video") return teamMode ? "image/*,video/*" : "image/*,video/*,audio/*";
     if (mode === "text") return `image/*,video/*,audio/*,${textDocumentExtensions.join(",")}`;
     return "image/*";
 }
 
-export function creationFileAccepted(mode: CreationMode, file: Pick<File, "type" | "name">) {
+export function creationFileAccepted(mode: CreationMode, file: Pick<File, "type" | "name">, teamMode = false) {
+    if (mode === "audio") return file.type.startsWith("audio/");
     if (file.type.startsWith("image/")) return true;
-    if (mode === "video") return file.type.startsWith("video/") || file.type.startsWith("audio/");
+    if (mode === "video") return file.type.startsWith("video/") || (!teamMode && file.type.startsWith("audio/"));
     if (mode !== "text") return false;
     const name = file.name.toLowerCase();
     return file.type.startsWith("video/") || file.type.startsWith("audio/") || file.type.startsWith("text/") || textDocumentExtensions.some((extension) => name.endsWith(extension));

@@ -286,6 +286,8 @@ export const koKR: DeepStringRecord<typeof zhCN> = {
                 },
             },
             tbd: "미정",
+            chooseProduct: "요금제 선택",
+            selectedProduct: "선택됨",
             startsAt: "{{time}} 판매 시작",
             ended: "종료",
             soldOut: "품절",

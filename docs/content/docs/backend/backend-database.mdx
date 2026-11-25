@@ -5,6 +5,22 @@ description: 影策后端核心持久化表与状态边界
 
 # 后端数据库
 
+## Linghua 首页、社区、学院与全站导航（Linghua Schema 1–3）
+
+Linghua 独立迁移账本 `linghua_schema_migrations` 的版本 1 新增社区作品、分类、活动、首页轮播、个性化菜单和学习广场配置表；版本 2 新增 `linghua_academy_settings`，保存学习广场的分类、课程卡片和 Markdown 章节配置；版本 3 扩展导航菜单，增加“联系我们”底部入口及联系卡片配置。没有新增或修改上游既有表的列、索引或约束。早期仅存在于未发布开发版中的主账本版本 111/112 会在升级时校验并转入 Linghua 台账，同时把旧表改名到 `linghua_` 前缀。
+
+| 表 | 所有者与关联 | 保留边界 |
+| --- | --- | --- |
+| `linghua_home_carousel_settings` | 管理员维护全站首页轮播配置 | 轮播配置 JSON 和最后更新管理员 ID；不存媒体二进制 |
+| `linghua_navigation_menu_items` | 管理员统一维护 Linghua 新增页面（学习广场、社区作品、活动赛事）的分组、顺序、图标、显示状态，以及“联系我们”弹窗卡片 | 仅允许 `/linghua/` 路径；联系卡片保存标题、说明和二维码图片地址；不控制上游原有导航项；用户侧无个人显隐偏好 |
+| `linghua_community_works` | 用户投稿与管理员审核；保存用户、团队、画布项目和资源的稳定 ID | 媒体仍由上游资源系统管理，不复制资源记录；投稿状态由本表维护 |
+| `linghua_community_categories` | 管理员维护社区分类 | 禁用分类不删除历史投稿中的分类快照 |
+| `linghua_creator_challenges` | 管理员维护活动、赛道及活动时间 | 作品引用活动 ID 并保留标题快照 |
+| `linghua_learning_square_settings` | 管理员维护学习广场标题、说明、启用状态和可见内容来源 | 灵感内容目录仍由现有静态目录/上新同步供给 |
+| `linghua_academy_settings` | 管理员维护学习广场课程分类、课程信息、章节正文和全站开放状态 | 配置以 JSON 存储；封面及课程正文媒体引用不复制上游资源记录 |
+
+升级沿用 `migrate-schema up` 与 `migrate-schema verify`，命令会依次校验上游、出彩和 Linghua 三条迁移账本。SQLite → PostgreSQL 复制清单包含以上扩展表。回退程序时应恢复升级前匹配版本的数据库备份；不要直接删除迁移记录或新表。
+
 ## 模型请求插件发行版（Schema 109）
 
 `model_protocol_releases` 增加 `channel_models.protocol_release` 及索引，保存模型绑定的请求包 SHA-256。`tasks.protocol_binding_json` 和 `route_attempts.protocol_binding_json` 在新任务入队、路由尝试时记录版本、上游型号、能力与报价修订，以及渠道连接的 HMAC。快照仅在服务端使用。历史记录的新增列保持空值。

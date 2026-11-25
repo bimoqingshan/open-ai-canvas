@@ -61,6 +61,9 @@
     --canvas-workspace-open-width: calc(var(--canvas-workspace-rail-width) + 20rem);
     --canvas-workspace-inset: calc(var(--canvas-workspace-left) + var(--canvas-workspace-rail-width));
 }
+.canvas-main-with-workspace.canvas-workspace-rail-hidden:not(.canvas-workspace-expanded) {
+    --canvas-workspace-inset: 0px;
+}
 @media (min-width: 992px) {
     .canvas-main-with-workspace.canvas-workspace-expanded {
         --canvas-workspace-inset: calc(var(--canvas-workspace-left) + var(--canvas-workspace-open-width));
@@ -101,7 +104,7 @@
 .canvas-workspace-corner:not(.is-expanded) {
     row-gap: var(--space-2);
 }
-.canvas-workspace-corner > .canvas-topbar-project-cluster,
+.canvas-workspace-corner > .canvas-project-heading-group > .canvas-topbar-project-cluster,
 .canvas-workspace-shell {
     pointer-events: auto;
     background: var(--canvas-workspace-material);
@@ -110,10 +113,21 @@
     -webkit-backdrop-filter: blur(22px) saturate(140%);
     backdrop-filter: blur(22px) saturate(140%);
 }
-.canvas-workspace-corner > .canvas-topbar-project-cluster {
+.canvas-workspace-corner > .canvas-project-heading-group {
     position: relative;
     flex: none;
-    max-width: min(360px, calc(50% - var(--space-2)));
+    width: max-content;
+    max-width: min(560px, calc(100% - var(--space-2)));
+}
+.canvas-workspace-corner > .canvas-project-heading-group > .canvas-topbar-view-switch {
+    margin-inline-start: var(--space-2);
+}
+.canvas-workspace-corner > .canvas-project-heading-group > .canvas-topbar-project-cluster {
+    position: relative;
+    flex: none;
+    width: max-content;
+    max-width: min(560px, calc(100% - var(--space-24)));
+    border-color: transparent;
     padding-inline-start: calc((var(--canvas-workspace-rail-width) - 2.25rem) / 2 - var(--stroke-1));
 }
 .canvas-workspace-shell {
@@ -123,9 +137,12 @@
     overflow: hidden;
     contain: layout paint;
 }
-.canvas-workspace-corner.is-expanded > .canvas-topbar-project-cluster {
+.canvas-workspace-corner.is-expanded > .canvas-project-heading-group {
     width: var(--canvas-workspace-open-width);
-    max-width: calc(50% - var(--space-2));
+    max-width: calc(100% - var(--space-2));
+}
+.canvas-workspace-corner.is-expanded > .canvas-project-heading-group > .canvas-topbar-project-cluster {
+    max-width: 100%;
     border-bottom: 0;
     border-radius: var(--r-2xl) var(--r-2xl) 0 0;
 }

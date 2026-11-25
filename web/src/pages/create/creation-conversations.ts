@@ -1,7 +1,7 @@
 import { translate } from "@/i18n";
 import { createClientId } from "@/lib/client-id";
 import { generationErrorMessage } from "@/lib/generation-error";
-import { creationMessageMayHaveExternalVideoResult } from "@/lib/creation-message-recovery";
+import { creationMessageMayHaveExternalMediaResult } from "@/lib/creation-message-recovery";
 import type { BackendGenerationResult } from "@/services/api/generation-task";
 import type { GenerationTask } from "@/services/api/task-center";
 import { creationAttachmentKind, type CreationAttachment } from "./creation-assets";
@@ -43,7 +43,7 @@ export function creationVideoShotOrdinal(shots: CreationShotRailEntry[], item: C
 
 export function completedCreationGenerationTask(
     runtime: CreationRuntime,
-    input: { taskId: string; task?: GenerationTask; mode: "image" | "video"; prompt: string; result: BackendGenerationResult; conversationId: string; messageId: string; batchIndex?: number; batchCount?: number },
+    input: { taskId: string; task?: GenerationTask; mode: "image" | "video" | "audio"; prompt: string; result: BackendGenerationResult; conversationId: string; messageId: string; batchIndex?: number; batchCount?: number },
 ): GenerationTask {
     const now = new Date().toISOString();
     const task = input.task ?? { id: input.taskId, type: input.mode, status: "succeeded" as const, prompt: input.prompt, attempts: 1, createdAt: now, updatedAt: now };
@@ -107,7 +107,7 @@ export async function materializeCreationTaskResults(runtime: CreationRuntime, t
 
 /** 失败但后端没有确认任务失败（含旧版本未分类的失败）：作品可能已生成，应提供“重新获取结果”。 */
 export function creationMessageNeedsResultSync(message: Pick<CreationMessage, "status" | "errorKind" | "taskIds"> & Partial<Pick<CreationMessage, "mode" | "error">>) {
-    return message.status === "error" && Boolean(message.taskIds?.length) && (message.errorKind !== "task" || creationMessageMayHaveExternalVideoResult(message));
+    return message.status === "error" && Boolean(message.taskIds?.length) && (message.errorKind !== "task" || creationMessageMayHaveExternalMediaResult(message));
 }
 
 // 仍需用任务终态来收敛的媒体消息：生成中，或失败但后端没有确认失败。
@@ -193,9 +193,11 @@ export function reconcileCreationTaskMessages(runtime: CreationRuntime, conversa
                 const content =
                     message.mode === "video"
                         ? translate("create.status.videoGenerated")
-                        : failedCount
-                          ? translate("create.status.imagesPartiallyGenerated", { done: resultStorageKeys.length || resultUrls.length, failed: failedCount })
-                          : translate("create.status.imageGenerated");
+                        : message.mode === "audio"
+                          ? translate("create.status.audioGenerated")
+                          : failedCount
+                            ? translate("create.status.imagesPartiallyGenerated", { done: resultStorageKeys.length || resultUrls.length, failed: failedCount })
+                            : translate("create.status.imageGenerated");
                 return {
                     ...message,
                     ...clearedCreationSyncState,

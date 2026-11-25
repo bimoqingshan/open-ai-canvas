@@ -49,6 +49,7 @@ type Options struct {
 	AudioLanguage         *string `json:"audioLanguage,omitempty" node:"audioLanguage" task:"audioLanguage" modes:"audio"`
 	AudioDialect          *string `json:"audioDialect,omitempty" node:"audioDialect" task:"audioDialect" modes:"audio"`
 	AudioInstructions     *string `json:"audioInstructions,omitempty" node:"audioInstructions" task:"audioInstructions" modes:"audio"`
+	Instrumental          *bool   `json:"instrumental,omitempty" node:"instrumental" task:"audioInstrumental" modes:"audio"`
 }
 
 type ReferenceBinding struct {

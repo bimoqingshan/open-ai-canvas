@@ -118,6 +118,10 @@ export function isDoubaoAudioConfig(config: AiConfig) {
     return resolveModelRequestConfig(config, config.model || config.audioModel).interfaceType === "doubao-streaming-tts";
 }
 
+export function isCangyuanMusicPromptConfig(config: AiConfig) {
+    return resolveModelRequestConfig(config, config.model || config.audioModel).interfaceType === "cangyuan-music-prompt";
+}
+
 export function isMiniMaxSpeechConfig(config: AiConfig) {
     return resolveModelRequestConfig(config, config.model || config.audioModel).interfaceType === "minimax-speech";
 }

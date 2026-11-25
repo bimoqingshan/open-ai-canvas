@@ -46,6 +46,80 @@
     font-size: var(--fs-caption);
     line-height: 1.6;
 }
+.creation-inspiration-heading {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: center;
+}
+.creation-inspiration-heading > div:first-child {
+    grid-column: 2;
+    text-align: center;
+}
+.creation-inspiration-heading h1 {
+    font-size: var(--typ-display-sm);
+}
+.creation-inspiration-history {
+    grid-column: 3;
+    justify-self: end;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+.creation-history-sync {
+    display: flex;
+    min-height: 20px;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--space-1);
+    color: var(--user-ink-soft);
+    font-size: var(--fs-tiny);
+    text-align: right;
+}
+.creation-history-sync button {
+    border: 0;
+    padding: 0;
+    background: transparent;
+    color: var(--user-ink-muted);
+    font: inherit;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    cursor: pointer;
+}
+.creation-thinking-popover {
+    display: grid;
+    width: 220px;
+    gap: 12px;
+    padding: 4px;
+}
+.creation-thinking-popover > span {
+    color: var(--user-ink-muted);
+    font-size: var(--fs-caption);
+    font-weight: 600;
+}
+.creation-chat-control.creation-thinking-trigger {
+    flex: 0 0 auto;
+    white-space: nowrap;
+}
+.creation-inspiration-layout .creation-composer-stage {
+    width: min(100%, 960px);
+    margin-inline: auto;
+}
+.creation-inspiration-layout .creation-chat-composer.is-empty {
+    border-radius: 16px !important;
+    background: color-mix(in srgb, var(--user-surface, var(--creation-surface)) 82%, transparent) !important;
+    box-shadow: none;
+}
+.creation-inspiration-layout .creation-chat-composer.is-empty .creation-chat-writing-surface {
+    min-height: 0 !important;
+    padding: 14px 20px 6px !important;
+}
+.creation-inspiration-layout .creation-chat-composer.is-empty .creation-chat-mention-editor {
+    min-height: 3.1em !important;
+}
+.creation-inspiration-layout .creation-chat-dock {
+    min-height: 56px !important;
+    padding: 8px 16px 10px !important;
+}
 /* 与工作台文字按钮同一语言：透明底、弱化文字，hover 只换表面。 */
 .creation-history-entry {
     display: inline-flex;
@@ -316,6 +390,32 @@
         margin-bottom: var(--space-4);
         gap: var(--space-2);
     }
+    .creation-inspiration-heading {
+        grid-template-columns: minmax(0, 1fr);
+        align-items: start;
+    }
+    .creation-inspiration-heading > div:first-child {
+        grid-column: 1;
+        grid-row: 1;
+        text-align: left;
+    }
+    .creation-inspiration-history {
+        grid-column: 1;
+        grid-row: 2;
+        justify-self: start;
+        align-items: flex-start;
+        max-width: 100%;
+        margin-top: var(--space-2);
+    }
+    .creation-inspiration-heading h1 {
+        padding-right: 0;
+    }
+    .creation-history-sync {
+        flex-wrap: wrap;
+        justify-content: flex-start;
+        font-size: 10px;
+        text-align: left;
+    }
     .creation-start-heading h1 {
         font-size: var(--fs-title);
     }
@@ -406,6 +506,41 @@
     border-radius: var(--creation-mode-card-radius);
     background: transparent;
     box-shadow: 0 6px 16px color-mix(in srgb, var(--user-ink) 8%, transparent);
+}
+
+.creation-mode-dropdown-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+}
+.creation-mode-dropdown-popup {
+    min-width: 220px;
+    padding: 8px;
+    border: 1px solid var(--user-border);
+    border-radius: 16px;
+    background: var(--user-surface-raised);
+    box-shadow: var(--elevation-overlay);
+}
+.creation-mode-dropdown-popup .ant-dropdown-menu {
+    width: 100%;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+}
+.creation-mode-dropdown-popup .ant-dropdown-menu-item {
+    min-height: 44px;
+    border-radius: 10px;
+}
+.creation-mode-dropdown-popup svg.ant-dropdown-menu-item-icon {
+    width: 16px;
+    height: 16px;
+}
+.creation-mode-dropdown-popup__heading {
+    padding: 4px 10px 8px;
+    color: var(--user-ink-muted);
+    font-size: var(--fs-caption);
+    font-weight: 600;
 }
 .dark .creation-mode-card {
     box-shadow:

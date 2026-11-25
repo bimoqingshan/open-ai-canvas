@@ -1,0 +1,293 @@
+{
+  "apiVersion": "yingce.plugin/v2",
+  "id": "volcengine-ark-seedream-55",
+  "name": "Base-Image-V1",
+  "version": "1.0.0",
+  "author": "",
+  "description": "",
+  "enabled": false,
+  "permissions": [
+    "generation.run",
+    "media.read"
+  ],
+  "configuration": {
+    "fields": [
+      {
+        "name": "apiKey",
+        "type": "secret",
+        "label": "API Key",
+        "required": true
+      }
+    ]
+  },
+  "contributes": {
+    "providers": [
+      {
+        "id": "volcengine-ark-seedream-55",
+        "label": "Base-Image-V1",
+        "capabilities": [
+          "image"
+        ],
+        "scopes": [
+          "admin.system-channel",
+          "user.custom-channel",
+          "canvas",
+          "creation"
+        ],
+        "requiresPublicMediaUrls": true,
+        "auth": {
+          "type": "bearer",
+          "field": "apiKey"
+        },
+        "parameters": [
+          {
+            "name": "model",
+            "type": "string",
+            "required": true,
+            "mapping": "model",
+            "description": "模型 ID，仅接受 doubao-seedream-5-5"
+          },
+          {
+            "name": "prompt",
+            "type": "string",
+            "required": true,
+            "mapping": "prompt",
+            "description": "图片描述或编辑指令"
+          },
+          {
+            "name": "size",
+            "type": "string",
+            "required": false,
+            "mapping": "size",
+            "description": "画幅比例，支持 auto、1:1、3:2、2:3、4:3、3:4、16:9、9:16、21:9、9:21；auto 或省略时按 1:1 处理"
+          },
+          {
+            "name": "resolution",
+            "type": "string",
+            "required": false,
+            "mapping": "resolution",
+            "description": "分辨率档位，1k 或 2k，默认 1k"
+          },
+          {
+            "name": "images",
+            "type": "media[]",
+            "required": false,
+            "mapping": "images",
+            "description": "参考图数组，最多 10 张，按 order 升序排列后映射为 URL 数组"
+          },
+          {
+            "name": "n",
+            "type": "integer",
+            "required": false,
+            "mapping": "n",
+            "description": "生成数量，固定为 1"
+          }
+        ],
+        "imageParameters": [
+          {
+            "name": "size",
+            "label": "画幅比例",
+            "type": "string",
+            "binding": "aspectRatio",
+            "encoding": "ratio",
+            "values": [
+              "auto",
+              "1:1",
+              "3:2",
+              "2:3",
+              "4:3",
+              "3:4",
+              "16:9",
+              "9:16",
+              "21:9",
+              "9:21"
+            ],
+            "default": "1:1"
+          },
+          {
+            "name": "imageResolution",
+            "label": "分辨率",
+            "type": "string",
+            "binding": "resolution",
+            "values": [
+              "1k",
+              "2k"
+            ],
+            "default": "1k",
+            "pricing": true
+          }
+        ],
+        "validations": [
+          {
+            "assert": {
+              "$gt": [
+                {
+                  "$len": {
+                    "$trim": {
+                      "$ref": "request.prompt"
+                    }
+                  }
+                },
+                0
+              ]
+            },
+            "message": "提示词不能为空"
+          },
+          {
+            "assert": {
+              "$lte": [
+                {
+                  "$ref": "request.imageCount"
+                },
+                1
+              ]
+            },
+            "message": "每次只能提交 1 张（n 固定为 1）"
+          },
+          {
+            "assert": {
+              "$lte": [
+                {
+                  "$len": {
+                    "$ref": "request.images"
+                  }
+                },
+                10
+              ]
+            },
+            "message": "参考图最多 10 张"
+          },
+          {
+            "assert": {
+              "$or": [
+                {
+                  "$eq": [
+                    {
+                      "$ref": "request.aspectRatio"
+                    },
+                    ""
+                  ]
+                },
+                {
+                  "$in": [
+                    {
+                      "$ref": "request.aspectRatio"
+                    },
+                    [
+                      "auto",
+                      "1:1",
+                      "3:2",
+                      "2:3",
+                      "4:3",
+                      "3:4",
+                      "16:9",
+                      "9:16",
+                      "21:9",
+                      "9:21"
+                    ]
+                  ]
+                }
+              ]
+            },
+            "message": "不支持该画幅比例，请使用标准比例或 auto"
+          },
+          {
+            "assert": {
+              "$or": [
+                {
+                  "$eq": [
+                    {
+                      "$ref": "request.resolution"
+                    },
+                    ""
+                  ]
+                },
+                {
+                  "$in": [
+                    {
+                      "$ref": "request.resolution"
+                    },
+                    [
+                      "1k",
+                      "2k"
+                    ]
+                  ]
+                }
+              ]
+            },
+            "message": "resolution 只支持 1k 或 2k"
+          }
+        ],
+        "create": {
+          "method": "POST",
+          "path": "/v1/images/generations",
+          "contentType": "application/json",
+          "body": {
+            "model": {
+              "$ref": "request.model"
+            },
+            "prompt": {
+              "$ref": "request.prompt"
+            },
+            "n": 1,
+            "size": {
+              "$if": {
+                "condition": {
+                  "$in": [
+                    {
+                      "$lower": {
+                        "$trim": {
+                          "$ref": "request.aspectRatio"
+                        }
+                      }
+                    },
+                    [
+                      "",
+                      "auto"
+                    ]
+                  ]
+                },
+                "then": "1:1",
+                "else": {
+                  "$ref": "request.aspectRatio"
+                }
+              }
+            },
+            "resolution": {
+              "$omitEmpty": {
+                "$ref": "request.resolution"
+              }
+            },
+            "images": {
+              "$omitEmpty": {
+                "$map": {
+                  "from": {
+                    "$sortByOrder": {
+                      "$ref": "request.images"
+                    }
+                  },
+                  "as": "media",
+                  "in": {
+                    "$ref": "media.value"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "response": {
+          "images": {
+            "$ref": "response.data"
+          },
+          "errorPaths": [
+            "error.code"
+          ],
+          "messagePaths": [
+            "error.message"
+          ]
+        }
+      }
+    ]
+  },
+  "documentation": "# Base-Image-V1\n\n通用图片生成插件，支持文生图与参考图，九种画幅比例，1k/2k 分辨率可选。\n\n## 配置\n\n| 字段 | 说明 |\n|------|------|\n| `apiKey` | API Key，由渠道管理员统一配置 |\n\n## 使用说明\n\n在渠道管理中新增渠道，选择此 Provider，填入 API Key 和 Base URL。\n\n---\n\n# Base-Image-V1 接口说明\n\n---\n\n## 渠道配置\n\n| 字段 | 类型 | 必填 | 说明 |\n|------|------|------|------|\n| `apiKey` | secret | 是 | API Key，统一保存，不出现在请求日志中 |\n\n---\n\n## Provider：volcengine-ark-seedream-55\n\n### 请求参数\n\n| 参数 | 类型 | 必填 | 说明 |\n|------|------|------|------|\n| `model` | string | 是 | 模型 ID |\n| `prompt` | string | 是 | 图片描述或编辑指令 |\n| `size` | string | 否 | 画幅比例，支持 auto、1:1、3:2、2:3、4:3、3:4、16:9、9:16、21:9、9:21；auto 或省略时按 1:1 处理 |\n| `resolution` | string | 否 | 分辨率档位，1k 或 2k，默认 1k |\n| `images` | media[] | 否 | 参考图数组，最多 10 张，按 order 升序排列后映射为 URL 数组 |\n| `n` | integer | 否 | 生成数量，固定为 1 |\n\n### 响应\n\n同步返回，images 从 `response.data` 提取（b64_json 格式）。失败时 `error.code` 触发失败状态，`error.message` 作为错误信息。\n\n---\n\n## Manifest 合同\n\n<!-- YINGCE_MANIFEST_CONTRACT_START -->\n## Manifest 完整接口定义\n\n以下 JSON 与插件包内实际 `manifest.json` 逐字段一致，覆盖插件身份、权限、配置、鉴权、参数、校验、创建、Agent、查询、取消、结果下载、响应和 Agent 响应映射。`documentation` 字段的值就是当前完整文档；为避免文档在自身内部无限递归，JSON 中仅用等义占位文本表示正文。\n\n```json\n{\n  \"apiVersion\": \"yingce.plugin/v2\",\n  \"id\": \"volcengine-ark-seedream-55\",\n  \"name\": \"Base-Image-V1\",\n  \"version\": \"1.0.0\",\n  \"author\": \"\",\n  \"description\": \"\",\n  \"enabled\": false,\n  \"permissions\": [\n    \"generation.run\",\n    \"media.read\"\n  ],\n  \"configuration\": {\n    \"fields\": [\n      {\n        \"name\": \"apiKey\",\n        \"type\": \"secret\",\n        \"label\": \"API Key\",\n        \"required\": true\n      }\n    ]\n  },\n  \"contributes\": {\n    \"providers\": [\n      {\n        \"id\": \"volcengine-ark-seedream-55\",\n        \"label\": \"Base-Image-V1\",\n        \"capabilities\": [\n          \"image\"\n        ],\n        \"scopes\": [\n          \"admin.system-channel\",\n          \"user.custom-channel\",\n          \"canvas\",\n          \"creation\"\n        ],\n        \"requiresPublicMediaUrls\": true,\n        \"auth\": {\n          \"type\": \"bearer\",\n          \"field\": \"apiKey\"\n        },\n        \"parameters\": [\n          {\n            \"name\": \"model\",\n            \"type\": \"string\",\n            \"required\": true,\n            \"mapping\": \"model\",\n            \"description\": \"模型 ID，仅接受 doubao-seedream-5-5\"\n          },\n          {\n            \"name\": \"prompt\",\n            \"type\": \"string\",\n            \"required\": true,\n            \"mapping\": \"prompt\",\n            \"description\": \"图片描述或编辑指令\"\n          },\n          {\n            \"name\": \"size\",\n            \"type\": \"string\",\n            \"required\": false,\n            \"mapping\": \"size\",\n            \"description\": \"画幅比例，支持 auto、1:1、3:2、2:3、4:3、3:4、16:9、9:16、21:9、9:21；auto 或省略时按 1:1 处理\"\n          },\n          {\n            \"name\": \"resolution\",\n            \"type\": \"string\",\n            \"required\": false,\n            \"mapping\": \"resolution\",\n            \"description\": \"分辨率档位，1k 或 2k，默认 1k\"\n          },\n          {\n            \"name\": \"images\",\n            \"type\": \"media[]\",\n            \"required\": false,\n            \"mapping\": \"images\",\n            \"description\": \"参考图数组，最多 10 张，按 order 升序排列后映射为 URL 数组\"\n          },\n          {\n            \"name\": \"n\",\n            \"type\": \"integer\",\n            \"required\": false,\n            \"mapping\": \"n\",\n            \"description\": \"生成数量，固定为 1\"\n          }\n        ],\n        \"imageParameters\": [\n          {\n            \"name\": \"size\",\n            \"label\": \"画幅比例\",\n            \"type\": \"string\",\n            \"binding\": \"aspectRatio\",\n            \"encoding\": \"ratio\",\n            \"values\": [\n              \"auto\",\n              \"1:1\",\n              \"3:2\",\n              \"2:3\",\n              \"4:3\",\n              \"3:4\",\n              \"16:9\",\n              \"9:16\",\n              \"21:9\",\n              \"9:21\"\n            ],\n            \"default\": \"1:1\"\n          },\n          {\n            \"name\": \"imageResolution\",\n            \"label\": \"分辨率\",\n            \"type\": \"string\",\n            \"binding\": \"resolution\",\n            \"values\": [\n              \"1k\",\n              \"2k\"\n            ],\n            \"default\": \"1k\",\n            \"pricing\": true\n          }\n        ],\n        \"validations\": [\n          {\n            \"assert\": {\n              \"$gt\": [\n                {\n                  \"$len\": {\n                    \"$trim\": {\n                      \"$ref\": \"request.prompt\"\n                    }\n                  }\n                },\n                0\n              ]\n            },\n            \"message\": \"提示词不能为空\"\n          },\n          {\n            \"assert\": {\n              \"$lte\": [\n                {\n                  \"$ref\": \"request.imageCount\"\n                },\n                1\n              ]\n            },\n            \"message\": \"每次只能提交 1 张（n 固定为 1）\"\n          },\n          {\n            \"assert\": {\n              \"$lte\": [\n                {\n                  \"$len\": {\n                    \"$ref\": \"request.images\"\n                  }\n                },\n                10\n              ]\n            },\n            \"message\": \"参考图最多 10 张\"\n          },\n          {\n            \"assert\": {\n              \"$or\": [\n                {\n                  \"$eq\": [\n                    {\n                      \"$ref\": \"request.aspectRatio\"\n                    },\n                    \"\"\n                  ]\n                },\n                {\n                  \"$in\": [\n                    {\n                      \"$ref\": \"request.aspectRatio\"\n                    },\n                    [\n                      \"auto\",\n                      \"1:1\",\n                      \"3:2\",\n                      \"2:3\",\n                      \"4:3\",\n                      \"3:4\",\n                      \"16:9\",\n                      \"9:16\",\n                      \"21:9\",\n                      \"9:21\"\n                    ]\n                  ]\n                }\n              ]\n            },\n            \"message\": \"不支持该画幅比例，请使用标准比例或 auto\"\n          },\n          {\n            \"assert\": {\n              \"$or\": [\n                {\n                  \"$eq\": [\n                    {\n                      \"$ref\": \"request.resolution\"\n                    },\n                    \"\"\n                  ]\n                },\n                {\n                  \"$in\": [\n                    {\n                      \"$ref\": \"request.resolution\"\n                    },\n                    [\n                      \"1k\",\n                      \"2k\"\n                    ]\n                  ]\n                }\n              ]\n            },\n            \"message\": \"resolution 只支持 1k 或 2k\"\n          }\n        ],\n        \"create\": {\n          \"method\": \"POST\",\n          \"path\": \"/v1/images/generations\",\n          \"contentType\": \"application/json\",\n          \"body\": {\n            \"model\": {\n              \"$ref\": \"request.model\"\n            },\n            \"prompt\": {\n              \"$ref\": \"request.prompt\"\n            },\n            \"n\": 1,\n            \"size\": {\n              \"$if\": {\n                \"condition\": {\n                  \"$in\": [\n                    {\n                      \"$lower\": {\n                        \"$trim\": {\n                          \"$ref\": \"request.aspectRatio\"\n                        }\n                      }\n                    },\n                    [\n                      \"\",\n                      \"auto\"\n                    ]\n                  ]\n                },\n                \"then\": \"1:1\",\n                \"else\": {\n                  \"$ref\": \"request.aspectRatio\"\n                }\n              }\n            },\n            \"resolution\": {\n              \"$omitEmpty\": {\n                \"$ref\": \"request.resolution\"\n              }\n            },\n            \"images\": {\n              \"$omitEmpty\": {\n                \"$map\": {\n                  \"from\": {\n                    \"$sortByOrder\": {\n                      \"$ref\": \"request.images\"\n                    }\n                  },\n                  \"as\": \"media\",\n                  \"in\": {\n                    \"$ref\": \"media.value\"\n                  }\n                }\n              }\n            }\n          }\n        },\n        \"response\": {\n          \"images\": {\n            \"$ref\": \"response.data\"\n          },\n          \"errorPaths\": [\n            \"error.code\"\n          ],\n          \"messagePaths\": [\n            \"error.message\"\n          ]\n        }\n      }\n    ]\n  },\n  \"documentation\": \"<当前插件的完整 documentation，由 README.md 与 docs/interface.md 拼接而成；为避免 JSON 递归，此处不重复展开正文。>\"\n}\n```\n<!-- YINGCE_MANIFEST_CONTRACT_END -->\n"
+}

@@ -54,14 +54,14 @@ describe("canvas library card", () => {
     });
     test("grid caps at five columns and cover uses a 4:3 media mosaic", () => {
         expect(card).toContain("quiet mosaic");
-        expect(css).toMatch(/\.canvas-collection-grid \{[^}]*calc\(\(100% - 4 \* var\(--canvas-card-gap-x\)\) \/ 5\)/);
+        expect(css).toMatch(/\.canvas-collection-grid \{[^}]*repeat\(auto-fill, minmax\(min\(100%, max\(232px, calc\(\(100% - 4 \* var\(--canvas-card-gap-x\)\) \/ 5\)\)\), 1fr\)\)/);
         expect(css).toMatch(/\.canvas-collection-preview \{[^}]*aspect-ratio: 4 \/ 3;/);
-        expect(css).toMatch(/\.canvas-project-mosaic\[data-count="3"\] > :first-child \{ grid-row: span 2; \}/);
+        expect(css).toMatch(/\.canvas-project-mosaic\[data-count="3"\] > :first-child \{\s*grid-row: span 2;\s*\}/);
     });
     test("secondary actions are revealed on hover/focus and always visible without hover", () => {
         expect(card).toContain("canvas-collection-rename");
         expect(css).toMatch(/\.canvas-collection-card:is\(:hover, :focus-within\) :is\(\.canvas-collection-select, \.canvas-collection-rename, \.canvas-collection-actions\)/);
-        expect(css).toMatch(/@media \(hover: none\) \{ :is\(\.canvas-collection-select, \.canvas-collection-rename, \.canvas-collection-actions\) \{ opacity: 1; \} \}/);
+        expect(css).toMatch(/@media \(hover: none\) \{\s*:is\(\.canvas-collection-select, \.canvas-collection-rename, \.canvas-collection-actions\) \{\s*opacity: 1;/);
     });
 });
 

@@ -33,7 +33,7 @@ func TestKacangMidjourneyRouteDefaultsAndReferenceOrder(t *testing.T) {
 			}
 		}
 		if tc.model == "mj-v8.2" {
-			if body["quality"] != float64(1) || body["stylize"] != float64(100) || body["chaos"] != float64(0) || body["raw"] != false || body["hd"] != false {
+			if body["quality"] != "1" || body["stylize"] != float64(100) || body["chaos"] != float64(0) || body["raw"] != false || body["hd"] != false {
 				t.Fatalf("stable defaults = %#v", body)
 			}
 		} else if _, exists := body["quality"]; exists {
@@ -54,6 +54,41 @@ func TestKacangMidjourneyRouteDefaultsAndReferenceOrder(t *testing.T) {
 		poll, err := adapter.BuildPoll(context.Background(), PollContext{Request: request, TaskID: "task-42"})
 		if err != nil || poll.Path != "/v1/tasks/task-42" {
 			t.Fatalf("poll = %#v, error=%v", poll, err)
+		}
+	}
+}
+
+func TestKacangMidjourneyQualityIsJSONString(t *testing.T) {
+	adapter := kacangAdapter(t, "kacang-midjourney")
+	for _, model := range []string{"mj-v8.2", "mj-v8.1", "mj-v6.1", "mj-v7", "mj-niji7"} {
+		for _, tc := range []struct {
+			name  string
+			input any
+			want  string
+		}{
+			{"default", nil, "1"},
+			{"quarter", 0.25, "0.25"},
+			{"half", 0.5, "0.5"},
+			{"one", 1, "1"},
+			{"two", 2, "2"},
+			{"string quarter", "0.25", "0.25"},
+			{"string half", "0.5", "0.5"},
+			{"string one", "1", "1"},
+			{"string two", "2", "2"},
+		} {
+			t.Run(model+"/"+tc.name, func(t *testing.T) {
+				request := GenerationRequest{Model: model, Prompt: "portrait"}
+				if tc.input != nil {
+					request.ProviderOptions = map[string]map[string]any{"kacang-midjourney": {"quality": tc.input}}
+				}
+				spec, err := adapter.BuildCreate(context.Background(), RequestContext{Request: request})
+				if err != nil {
+					t.Fatal(err)
+				}
+				if got := manifestTestBody(t, spec)["quality"]; got != tc.want {
+					t.Fatalf("quality = %#v (%T), want JSON string %q", got, got, tc.want)
+				}
+			})
 		}
 	}
 }

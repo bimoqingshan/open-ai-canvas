@@ -1,0 +1,297 @@
+.admin-community-search {
+    width: min(360px, calc(100vw - 48px));
+}
+
+.admin-community-work-meta {
+    color: var(--admin-text-muted);
+    font-size: 12px;
+    line-height: 1.45;
+}
+
+.admin-community-order-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 0;
+}
+
+.admin-community-category-modal {
+    display: grid;
+    gap: 14px;
+}
+
+.admin-community-category-list {
+    display: grid;
+    max-height: 220px;
+    gap: 6px;
+    overflow-y: auto;
+}
+
+.admin-community-category-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    border: 1px solid var(--admin-border);
+    border-radius: var(--admin-radius-sm);
+    padding: 8px 10px;
+}
+
+.admin-community-category-row > div {
+    display: grid;
+    min-width: 0;
+    gap: 2px;
+}
+
+.admin-community-category-row strong {
+    color: var(--admin-text);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.admin-community-category-row span,
+.admin-community-category-empty {
+    color: var(--admin-text-secondary);
+    font-size: 12px;
+}
+
+.admin-community-category-empty {
+    margin: 0;
+}
+
+.admin-community-category-form {
+    display: grid;
+    gap: 10px;
+    border-top: 1px solid var(--admin-border);
+    padding-top: 12px;
+}
+
+.admin-community-category-form label {
+    display: grid;
+    gap: 5px;
+    color: var(--admin-text);
+    font-size: 12px;
+}
+
+.admin-community-category-form__row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(150px, 0.6fr);
+    align-items: end;
+    gap: 10px;
+}
+
+.admin-community-work-name {
+    display: flex;
+    min-width: 220px;
+    align-items: center;
+    gap: 10px;
+}
+
+.admin-community-work-name img {
+    width: 72px;
+    aspect-ratio: 16 / 9;
+    flex: 0 0 72px;
+    border-radius: 4px;
+    border: 1px solid var(--admin-border);
+    background: var(--admin-surface-2);
+    object-fit: cover;
+}
+
+.admin-community-work-name > div,
+.admin-community-challenge-name {
+    display: grid;
+    min-width: 0;
+    gap: 3px;
+}
+
+.admin-community-work-name strong,
+.admin-community-challenge-name strong {
+    overflow: hidden;
+    color: var(--admin-text);
+    font-size: 13px;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.admin-community-work-name span,
+.admin-community-challenge-name span {
+    overflow: hidden;
+    color: var(--admin-text-muted);
+    font-size: 12px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.admin-community-review {
+    display: grid;
+    max-height: calc(100svh - 180px);
+    gap: 13px;
+    overflow-y: auto;
+    padding-right: 2px;
+}
+
+.admin-community-review img {
+    display: block;
+    width: 100%;
+    max-height: 42svh;
+    border: 1px solid var(--admin-border);
+    border-radius: var(--admin-radius-sm);
+    background: var(--admin-surface-2);
+    object-fit: contain;
+}
+
+.admin-community-review video {
+    display: block;
+    width: 100%;
+    max-height: 42svh;
+    aspect-ratio: 16 / 9;
+    border-radius: var(--admin-radius-sm);
+    background: var(--admin-surface-2);
+    object-fit: contain;
+}
+
+.admin-community-review > h2 {
+    margin: 0;
+    color: var(--admin-text);
+    font-size: 15px;
+    font-weight: 600;
+}
+
+.admin-community-review > p {
+    margin: 0;
+    color: var(--admin-text-secondary);
+    font-size: 13px;
+    line-height: 1.55;
+    white-space: pre-wrap;
+}
+
+.admin-community-review-prompt {
+    max-height: 240px;
+    overflow: auto;
+    border: 1px solid var(--admin-border);
+    border-radius: var(--admin-radius-sm);
+    background: var(--admin-surface-2);
+    padding: 10px;
+    color: var(--admin-text-secondary);
+    font-size: 13px;
+    line-height: 1.55;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.admin-community-review-label {
+    display: grid;
+    gap: 6px;
+    color: var(--admin-text);
+    font-size: 12px;
+}
+
+.admin-community-review-actions {
+    display: flex;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.admin-community-review__copy {
+    display: grid;
+    gap: 5px;
+    color: var(--admin-text-secondary);
+    font-size: 12px;
+    line-height: 1.55;
+}
+
+.admin-community-review__copy h2 {
+    margin: 0;
+    color: var(--admin-text);
+    font-size: 16px;
+    font-weight: 620;
+}
+
+.admin-community-review__copy p {
+    margin: 0 0 3px;
+    color: var(--admin-text);
+    font-size: 13px;
+    white-space: pre-wrap;
+}
+
+.admin-community-review__copy a {
+    width: fit-content;
+}
+
+.admin-community-review > label,
+.admin-community-challenge-form > label,
+.admin-community-date-row label {
+    display: grid;
+    gap: 6px;
+    color: var(--admin-text);
+    font-size: 12px;
+}
+
+.admin-community-challenge-description small {
+    color: var(--admin-text-muted);
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.admin-community-review__actions {
+    display: flex;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.admin-community-challenge-form {
+    display: grid;
+    max-height: calc(100svh - 180px);
+    gap: 12px;
+    overflow-y: auto;
+    padding-right: 2px;
+}
+
+.admin-community-date-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.admin-community-track-heading,
+.admin-community-enable {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.admin-community-track-heading strong,
+.admin-community-enable span {
+    color: var(--admin-text);
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.admin-community-track-list {
+    display: grid;
+    gap: 7px;
+}
+
+.admin-community-track-list > div {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 32px;
+    align-items: center;
+    gap: 5px;
+}
+
+@media (max-width: 560px) {
+    .admin-community-date-row {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .admin-community-review__actions button {
+        flex: 1 1 auto;
+    }
+
+    .admin-community-review-actions button {
+        flex: 1 1 auto;
+    }
+}

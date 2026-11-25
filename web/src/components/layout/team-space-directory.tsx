@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Alert, Button, Input, type InputRef } from "antd";
-import { ArrowUpRight, Building2, Check, Layers2, Plus, Search, UserRound, UsersRound, Wallet } from "lucide-react";
+import { ArrowRight, Building2, Check, Layers2, Plus, Search, UserRound, UsersRound, Wallet } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router";
 import { AppModal } from "@/components/ui/product/app-modal";
 import { useSpaceCreditOverview } from "@/hooks/use-space-credit-overview";
@@ -175,7 +175,7 @@ export function PersonalSpaceCreditOverview() {
                     <p>每个空间单独扣费，公共待分配积分由所有者划拨。</p>
                 </div>
                 <Link to="/teams">
-                    管理空间 <ArrowUpRight className="size-3.5" aria-hidden />
+                    管理空间 <ArrowRight className="size-3.5" aria-hidden />
                 </Link>
             </header>
             {overview.isError ? (

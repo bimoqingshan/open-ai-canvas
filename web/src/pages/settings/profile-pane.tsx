@@ -6,6 +6,7 @@ import { useSearchParams } from "react-router";
 import { useTranslation } from "react-i18next";
 
 import { UserAvatar } from "@/components/layout/user-avatar";
+import { AccountActivitySection } from "@/components/account/account-activity-section";
 import { PersonalSpaceCreditOverview } from "@/components/layout/team-space-directory";
 import { useAuthEntry } from "@/hooks/use-auth-entry";
 import { ImageCropDialog, type ImageCropRect } from "@/components/image-crop-dialog";
@@ -330,6 +331,7 @@ export function ProfilePane() {
                     </section>
 
                     <PersonalSpaceCreditOverview />
+                    <AccountActivitySection />
 
                     {profile.wechatEnabled || profile.wechatBound ? (
                         <Callout

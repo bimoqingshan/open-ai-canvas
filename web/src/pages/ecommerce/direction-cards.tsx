@@ -1,4 +1,4 @@
-import { ArrowUpRight, Check, PencilLine, Sparkles, X } from "lucide-react";
+import { ArrowRight, Check, PencilLine, Sparkles, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { NavCreateIcon, RefreshIcon, StyleLibraryIcon } from "@/components/ui/ecommerce-icons";
 import type { EcommerceCreativeDirection, EcommerceStyleRewrite } from "@/services/api/ecommerce";
@@ -223,7 +223,7 @@ export function CommerceDirectionCards({
                     }}
                 >
                     {degraded ? "请重新推荐" : !selectedId ? "先选择一个方向" : "按此风格生成"}
-                    <ArrowUpRight size={14} />
+                    <ArrowRight size={14} />
                 </button>
             </footer>
         </section>

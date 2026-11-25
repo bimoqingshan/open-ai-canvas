@@ -72,8 +72,8 @@ export function CreationMessageView({
                 <span className="creation-message-mark">
                     <Orbit />
                 </span>
-                <strong>{mode === "image" ? "图像生成" : "视频生成"}</strong>
-                {item.status === "done" ? <span className="creation-message-progress-copy">你的{mode === "video" ? "视频" : "图像"}已创建</span> : null}
+                <strong>{mode === "image" ? "图像生成" : mode === "video" ? "视频生成" : "音频生成"}</strong>
+                {item.status === "done" ? <span className="creation-message-progress-copy">你的{mode === "video" ? "视频" : mode === "audio" ? "音频" : "图像"}已创建</span> : null}
                 {item.status === "done" ? (
                     <button type="button" className="creation-message-variant-action" onClick={onCreateVariant}>
                         <RefreshCw />
@@ -319,7 +319,7 @@ export function MediaResult({
             };
         }
         // 历史记录只把 URL 当作短期 hint；真正恢复依赖稳定 storageKey，展示 URL 由访问缓存按需续签。
-        const resolver = item.mode === "video" ? resolveMediaUrl : resolveImageUrl;
+        const resolver = item.mode === "video" || item.mode === "audio" ? resolveMediaUrl : resolveImageUrl;
         void Promise.all(
             resultStorageKeys.map(async (storageKey, index) => {
                 if (resourceIdFromStorageKey(storageKey)) {
@@ -339,6 +339,7 @@ export function MediaResult({
     }, [item.id, item.mode, resultStorageKeys.join("|"), storedResultUrls.join("|")]);
 
     const isVideo = item.mode === "video";
+    const isAudio = item.mode === "audio";
     // 每个结果的加载状态与重试次数按 storageKey 记录；重试会换一个元素重新请求，并强制续签访问地址。
     const [mediaStates, setMediaStates] = useState<Record<string, "loaded" | "error">>({});
     const [mediaAttempts, setMediaAttempts] = useState<Record<string, number>>({});
@@ -353,7 +354,14 @@ export function MediaResult({
             .catch(() => markResultMedia(key, "error"));
     };
     const fallbackRatio = creationAspectRatioValue(creationMediaAspectRatio(item.settings?.ratio, item.mode || "image"));
-    const { entries: resultEntries, resolving } = creationResultEntries({ storageKeys: resultStorageKeys, storedUrls: storedResultUrls, resolvedByKey, failedByKey, isVideo, isRemoteKey: (storageKey) => Boolean(resourceIdFromStorageKey(storageKey)) });
+    const { entries: resultEntries, resolving } = creationResultEntries({
+        storageKeys: resultStorageKeys,
+        storedUrls: storedResultUrls,
+        resolvedByKey,
+        failedByKey,
+        isVideo: isVideo || isAudio,
+        isRemoteKey: (storageKey) => Boolean(resourceIdFromStorageKey(storageKey)),
+    });
     const alignedResultUrls = resultStorageKeys.length ? resultStorageKeys.map((storageKey) => resultEntries.find((entry) => entry.key === storageKey)?.url || "") : resultEntries.map((entry) => entry.url);
     const displayResultUrls = resultEntries.map((entry) => entry.url);
     const resultAssetIds = alignedResultUrls.length || resultStorageKeys.length ? creationResultAssetIds(assets, { messageId: item.id, taskIds: item.taskIds || [], resultUrls: alignedResultUrls, resultStorageKeys }) : [];
@@ -393,7 +401,12 @@ export function MediaResult({
     const pendingImageKeys = !isVideo && resolving ? resultStorageKeys.filter((storageKey) => !resultEntries.some((entry) => entry.key === storageKey)) : [];
     return (
         <div className="creation-media-result">
-            {isVideo ? (
+            {isAudio ? (
+                <div className="creation-audio-result">
+                    {displayResultUrls[0] ? <audio controls preload="metadata" src={displayResultUrls[0]} aria-label="生成的音频" /> : null}
+                    {!displayResultUrls[0] ? <span>正在加载音频…</span> : null}
+                </div>
+            ) : isVideo ? (
                 <button
                     type="button"
                     className="creation-video-result"
@@ -494,7 +507,7 @@ export function MediaResult({
  */
 export function CreationMediaPending({ item, refreshing, onRefresh, onRetry }: { item: CreationMessage; refreshing: boolean; onRefresh: () => void; onRetry: () => void }) {
     const mode: CreationMode = item.mode || "image";
-    const kind = mode === "video" ? "video" : "image";
+    const kind = mode;
     const phase: GenerationPhase = item.taskIds?.length ? generationTaskPhase({ status: item.generationStatus || "running", stage: item.generationStage, mediaStage: item.generationMediaStage }) : "submitting";
     const uncertain = phase === "uncertain";
     const progress =
@@ -505,9 +518,9 @@ export function CreationMediaPending({ item, refreshing, onRefresh, onRetry }: {
             : null;
     const elapsed = useTaskElapsed(item.createdAt);
     const hint = generationPhaseHint(phase, kind, item.generationStage);
-    const aspectRatio = creationMediaAspectRatio(item.settings?.ratio, mode);
+    const aspectRatio = mode === "audio" ? "3 / 1" : creationMediaAspectRatio(item.settings?.ratio, mode);
     const specs = creationPendingSpecs(item);
-    const Icon = mode === "video" ? Film : ImageIcon;
+    const Icon = mode === "video" ? Film : mode === "audio" ? Music2 : ImageIcon;
     return (
         <div
             className={`creation-media-pending is-${mode}`}
@@ -564,6 +577,7 @@ function CreationResultMediaError({ label }: { label: string }) {
 function creationPendingSpecs(item: CreationMessage) {
     const settings = item.settings;
     if (!settings) return "";
+    if (item.mode === "audio") return "";
     const ratio = settings.ratio && settings.ratio.toLowerCase() !== "auto" ? settings.ratio : "";
     if (item.mode === "video") return [ratio, settings.seconds ? `${settings.seconds} 秒` : "", settings.videoQuality ? `${settings.videoQuality.replace(/p$/i, "")}P` : ""].filter(Boolean).join(" · ");
     const count = Number(settings.count) || 1;

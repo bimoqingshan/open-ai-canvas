@@ -97,12 +97,12 @@ describe("creation library button", () => {
         expect(source).toContain('layout="position"');
         expect(source).toContain("isExpanded");
         expect(source).toContain("setReferencePanelExpanded");
-        expect(source).toContain("aria-label={`查看全部 ${props.attachments.length} 个参考内容`}");
-        expect(source).toContain('aria-label="收起素材面板"');
-        expect(source).toContain("清空全部素材");
+        expect(source).toContain('aria-label={t("create.composer.viewAllReferences", { count: props.attachments.length })}');
+        expect(source).toContain('aria-label={t("create.composer.collapseReferences")}');
+        expect(source).toContain('t("create.composer.clearAll")');
         expect(source).toContain('role="group"');
         expect(source).toContain("aria-pressed={referenceFilter === filter.id}");
-        expect(source).toContain('{ id: "file", label: "文件", count: referenceCounts.file }');
+        expect(source).toContain('{ id: "file", label: t("create.composer.file"), count: referenceCounts.file }');
         expect(source).toContain("canDragReferences");
         expect(source).toContain("creation-reference-track-wrapper");
         expect(source).toContain("creation-reference-stack-card");
@@ -169,6 +169,17 @@ describe("creation homepage default mode", () => {
         expect(source).toContain("initialComposerPreferences.mode || defaultCreationMode");
         expect(source).toContain("saved.mode || defaultCreationMode");
         expect(source).not.toContain('mode || "video"');
+    });
+
+    test("keeps image and video modes available in team workspaces", () => {
+        const source = readCreateSource();
+        const workspace = readCreateWorkspaceSource();
+
+        expect(source).not.toContain('if (workspaceTeamId && next !== "text") return');
+        expect(source).not.toContain('asset.kind === "text" : asset.kind === "image"');
+        expect(workspace).toContain("workspaceTeamId ? creationModeItems");
+        expect(workspace).toContain("workspaceTeamId ? <CreationModeDropdown");
+        expect(workspace).toContain('resolveModelChannel(props.config, model).scope === "system"');
     });
 });
 

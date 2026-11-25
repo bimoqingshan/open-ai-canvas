@@ -20,7 +20,7 @@ test("slider uses supported discrete positions and marks max distinctly", () => 
 
 test("model default remains distinct from its effective level", () => {
     const html = renderToStaticMarkup(<ThinkingLevelSlider levels={levels} value="auto" resolvedLevel="high" onChange={noop} />);
-    expect(html).toContain('aria-valuetext="默认"');
+    expect(html).toContain('aria-valuetext="自动"');
     expect(html).toContain('value="0"');
     expect(html).not.toContain("<button");
 });

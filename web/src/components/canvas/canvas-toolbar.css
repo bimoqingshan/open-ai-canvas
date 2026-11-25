@@ -1,0 +1,101 @@
+.canvas-toolbar-root.is-rail {
+    top: 50%;
+    left: max(var(--canvas-inset-x), env(safe-area-inset-left));
+    transform: translateY(-50%);
+}
+
+/* 主导航工具栏使用连续的工具按钮，不显示分组分割线。 */
+.canvas-toolbar-root .aceternity-dock-separator {
+    display: none;
+}
+
+.canvas-toolbar-root.is-rail .canvas-floating-dock {
+    --dock-item-size: var(--button-height);
+    flex-direction: column;
+    align-items: center;
+    width: max-content;
+    max-height: calc(100dvh - 160px);
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    border-radius: var(--r-2xl) !important;
+    background: color-mix(in srgb, var(--dock-surface) 72%, transparent) !important;
+    box-shadow:
+        0 1px 2px color-mix(in srgb, color-mix(in srgb, black 16%, transparent) 50%, transparent),
+        0 10px 28px color-mix(in srgb, black 16%, transparent) !important;
+    -webkit-backdrop-filter: blur(22px) saturate(140%);
+    backdrop-filter: blur(22px) saturate(140%);
+}
+
+.canvas-toolbar-root.is-rail .aceternity-dock-command,
+.canvas-toolbar-root.is-rail .aceternity-dock-switch-option {
+    width: var(--dock-item-size);
+    height: var(--dock-item-size);
+}
+
+.canvas-toolbar-root.is-rail .aceternity-dock-danger-group {
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-1);
+}
+
+.canvas-toolbar-root.is-rail .aceternity-dock-separator {
+    width: 16px;
+    height: 1px;
+    margin: var(--space-1) 0;
+}
+
+.canvas-toolbar-root.is-rail .aceternity-dock-switch {
+    flex-direction: column;
+}
+
+.canvas-toolbar-popover.is-rail {
+    translate: 0 -50%;
+}
+
+.canvas-toolbar-root.is-bottom.canvas-main-toolbar {
+    transform: translateX(var(--canvas-main-toolbar-shift, 0px));
+}
+
+.canvas-workspace-zoom-controls {
+    bottom: max(var(--canvas-inset-y), env(safe-area-inset-bottom));
+    left: max(var(--canvas-inset-x), env(safe-area-inset-left));
+}
+
+@media (max-width: 639px) {
+    .canvas-toolbar-root.is-rail {
+        top: auto;
+        right: var(--canvas-inset-x);
+        bottom: calc(var(--canvas-inset-y) + var(--button-height-lg) + var(--space-3));
+        left: var(--canvas-inset-x);
+        transform: none;
+    }
+
+    .canvas-toolbar-root.is-rail .canvas-floating-dock {
+        flex-direction: row;
+        width: 100%;
+        max-height: none;
+        overflow-x: auto !important;
+        overflow-y: hidden !important;
+    }
+
+    .canvas-toolbar-root.is-rail .aceternity-dock-danger-group {
+        flex-direction: row;
+    }
+
+    .canvas-toolbar-root.is-rail .aceternity-dock-separator {
+        width: 1px;
+        height: 16px;
+        margin: 0 var(--space-1);
+    }
+
+    .canvas-toolbar-root.is-rail .aceternity-dock-switch {
+        flex-direction: row;
+    }
+
+    .canvas-toolbar-popover.is-rail {
+        top: auto !important;
+        bottom: calc(var(--button-height-lg) + var(--space-4));
+        left: 50% !important;
+        translate: -50% 0;
+    }
+}

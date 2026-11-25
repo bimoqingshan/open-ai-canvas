@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { App, Button, Skeleton } from "antd";
 import { Switch } from "@/pages/admin/ui/controls";
-import { AlertTriangle, ArrowUpRight, Boxes, Clapperboard, Coins, CornerDownRight, History, ImageIcon, MonitorCog, PlugZap, Quote, RadioTower, RefreshCw, ShieldCheck, ShoppingBag, SlidersHorizontal, Video, Wallet } from "lucide-react";
+import { AlertTriangle, ArrowRight, Boxes, Clapperboard, Coins, CornerDownRight, History, ImageIcon, Images, MonitorCog, PlugZap, Quote, RadioTower, RefreshCw, ShieldCheck, ShoppingBag, SlidersHorizontal, Video, Wallet } from "lucide-react";
 
 import { Link } from "react-router";
 
@@ -25,7 +25,8 @@ type FeatureKey =
     | "imageWorkbenchEnabled"
     | "videoWorkbenchEnabled"
     | "ecommerceEnabled"
-    | "ecommerceVideoEnabled";
+    | "ecommerceVideoEnabled"
+    | "assetsEnabled";
 
 /** 跨分组的依赖：开关本身可以打开，但缺少这一项时功能只部分可用。 */
 type FeatureRequirement = { key: FeatureKey; effect: string };
@@ -65,6 +66,7 @@ const editableFeatureKeys: FeatureKey[] = [
     "frontendModelsEnabled",
     "pluginCenterEnabled",
     "systemPluginsVisibleToUsers",
+    "assetsEnabled",
 ];
 
 const featureGroups: FeatureGroup[] = [
@@ -88,6 +90,13 @@ const featureGroups: FeatureGroup[] = [
                 location: "侧栏 · 短剧制作",
                 description: "关闭后隐藏入口，已有项目保留。",
                 icon: <Clapperboard className="size-4" aria-hidden="true" />,
+            },
+            {
+                key: "assetsEnabled",
+                title: "资产库",
+                location: "侧栏 · 资产",
+                description: "控制资产库入口和页面展示。关闭后保留已有素材，也不影响其他功能引用素材。",
+                icon: <Images className="size-4" aria-hidden="true" />,
             },
             {
                 key: "imageWorkbenchEnabled",
@@ -453,7 +462,7 @@ function FeatureRowView({ row, draft, savingKey, onChange, nested = false }: { r
                         {row.link ? (
                             <Link to={row.link.to} className="afp-link">
                                 {row.link.label}
-                                <ArrowUpRight className="size-3" aria-hidden="true" />
+                                <ArrowRight className="size-3" aria-hidden="true" />
                             </Link>
                         ) : null}
                     </p>
@@ -505,7 +514,7 @@ function ModelSourceRow({ draft, saving, onChange }: { draft: FeatureAvailabilit
                         {draft.frontendModelsEnabled ? "用户只看到前台模型目录中整理过的模型。" : "用户直接选择系统渠道中启用的模型。"}
                         <Link to="/admin/models" className="afp-link">
                             配置前台模型
-                            <ArrowUpRight className="size-3" aria-hidden="true" />
+                            <ArrowRight className="size-3" aria-hidden="true" />
                         </Link>
                     </p>
                 </div>
@@ -543,6 +552,7 @@ function toEditablePayload(features: FeatureAvailability) {
         videoWorkbenchEnabled: features.videoWorkbenchEnabled,
         ecommerceEnabled: features.ecommerceEnabled,
         ecommerceVideoEnabled: features.ecommerceVideoEnabled,
+        assetsEnabled: features.assetsEnabled,
         frontendModelsEnabled: features.frontendModelsEnabled,
         pluginCenterEnabled: features.pluginCenterEnabled,
         systemPluginsVisibleToUsers: features.systemPluginsVisibleToUsers,
@@ -571,6 +581,7 @@ function parseFeatureAvailability(value: unknown): FeatureAvailability {
         videoWorkbenchEnabled: record.videoWorkbenchEnabled as boolean,
         ecommerceEnabled: record.ecommerceEnabled as boolean,
         ecommerceVideoEnabled: record.ecommerceVideoEnabled as boolean,
+        assetsEnabled: record.assetsEnabled as boolean,
         frontendModelsEnabled: record.frontendModelsEnabled as boolean,
         pluginCenterEnabled: record.pluginCenterEnabled as boolean,
         systemPluginsVisibleToUsers: record.systemPluginsVisibleToUsers as boolean,

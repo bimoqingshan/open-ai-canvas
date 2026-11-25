@@ -239,6 +239,7 @@
     --z-canvas-overlay: 5; /* L1 画布覆盖（网格、连线）*/
     --z-node: 10; /* L2 节点层（未选中）*/
     --z-node-active: 20; /* L3 激活节点（选中/拖拽）*/
+    --z-node-overlay: 25; /* 节点输入卡片与工具条，低于画布固定工具区 */
     --z-toolbar: 30; /* L4 浮动工具栏（顶栏、dock、zoom）*/
     --z-node-toolbar: 50; /* L5 节点工具栏（click 触发）*/
     --z-panel: 60; /* L6 侧边面板（侧栏、素材托盘）*/
@@ -2244,6 +2245,11 @@
         padding: var(--space-half) var(--space-2);
     }
 
+    .canvas-topbar-tools-cluster {
+        align-self: start;
+        margin-top: var(--space-2);
+    }
+
     .canvas-topbar > .canvas-topbar-cluster {
         border: 1px solid color-mix(in srgb, currentColor 8%, transparent);
         border-radius: var(--r-2xl);
@@ -2294,6 +2300,7 @@
         border-radius: var(--r-full);
         background: transparent;
         --view-switch-color: var(--view-switch-idle);
+        color: var(--view-switch-color, currentColor);
         cursor: pointer;
         transition:
             background-color var(--motion-instant) ease-out,
@@ -2315,6 +2322,10 @@
         background: var(--view-switch-active-bg);
         --view-switch-color: var(--view-switch-active-fg);
         box-shadow: 0 1px 2px color-mix(in srgb, black 24%, transparent);
+    }
+
+    .canvas-topbar-view-option[aria-pressed="true"]:hover {
+        background: var(--view-switch-active-bg) !important;
     }
 
     .canvas-topbar-view-option:focus-visible {
@@ -2347,7 +2358,7 @@
     }
 
     .canvas-topbar-title-row {
-        width: fit-content;
+        width: 100%;
     }
 
     @media (max-width: 767px) {
@@ -2359,7 +2370,7 @@
         }
 
         .canvas-topbar {
-            padding-inline: max(12px, env(safe-area-inset-left)) max(12px, env(safe-area-inset-right));
+            padding-inline: max(var(--space-2), env(safe-area-inset-left)) max(var(--space-2), env(safe-area-inset-right));
         }
 
         .canvas-topbar-project-cluster {
@@ -2525,7 +2536,7 @@
         z-index: var(--z-toolbar);
         height: var(--workspace-topbar-height, 56px);
         border: 0;
-        border-bottom: 1px solid var(--workspace-border);
+        border-bottom: 0;
         border-radius: 0;
         background: color-mix(in srgb, var(--workspace-content) 94%, transparent);
         box-shadow: none;
@@ -2534,7 +2545,7 @@
     }
 
     .app-workspace-topbar.has-extension {
-        border-bottom: 1px solid var(--workspace-border);
+        border-bottom: 0;
         background: color-mix(in srgb, var(--workspace-nav) 92%, transparent);
         backdrop-filter: blur(22px) saturate(120%);
         -webkit-backdrop-filter: blur(22px) saturate(120%);
@@ -11769,6 +11780,9 @@
 
     .canvas-node-composer {
         position: relative;
+        box-sizing: border-box;
+        width: 100%;
+        min-width: 0;
         container-type: inline-size;
         overflow: hidden;
         border: var(--stroke-1) solid var(--canvas-composer-edge);
@@ -13010,12 +13024,30 @@
     .canvas-node-composer-editor {
         position: relative;
         display: flex;
+        box-sizing: border-box;
+        width: 100%;
+        min-width: 0;
         flex-direction: column;
         overflow: hidden;
         border-radius: var(--r-md);
         background: transparent;
         margin-top: var(--space-3);
         padding-inline: var(--space-1);
+    }
+
+    .canvas-node-composer-editor > [data-canvas-no-zoom] {
+        box-sizing: border-box;
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+    }
+
+    .canvas-node-composer-editor :is([role="textbox"], textarea) {
+        display: block;
+        box-sizing: border-box;
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
     }
 
     .canvas-node-composer-editor:focus-within {
@@ -16005,7 +16037,7 @@ html:not(.dark) .creation-duration-menu strong {
 
 .previs-mode-switch-button {
     height: var(--space-6);
-    padding: 0 var(--space-2);
+    padding: 0 12px;
     border: var(--stroke-1) solid transparent;
     border-radius: var(--r-sm);
     color: var(--foreground);
@@ -17505,6 +17537,13 @@ html:not(.dark) .creation-user-message-reference {
 .creation-media-result {
     max-width: 860px;
     padding: 16px 0 0 32px;
+}
+.creation-audio-result {
+    width: min(680px, 100%);
+}
+.creation-audio-result audio {
+    display: block;
+    width: 100%;
 }
 .creation-image-result-grid {
     display: grid;
@@ -23733,7 +23772,8 @@ html:not(.dark) .creation-home .creation-user-message-copy-wrap {
     --workspace-reference-collapsed: 64px;
     --workspace-reference-topbar: 56px;
     --workspace-reference-row: 36px;
-    --workspace-reference-page-bg: #ffffff;
+    --workspace-reference-page-bg: #f4f4f5;
+    --user-page-bg: #f4f4f5;
     background: var(--workspace-reference-page-bg);
 }
 
@@ -25244,6 +25284,96 @@ html:not(.dark) .creation-home .creation-user-message-copy-wrap {
     overflow: hidden;
 }
 
+.workspace-wallet-redeem-modal .ant-modal-container {
+    overflow: hidden;
+    border: 1px solid var(--user-border);
+    border-radius: 18px;
+    background: var(--user-page-bg);
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.32);
+}
+
+.workspace-wallet-redeem-modal .ant-modal-body {
+    padding: 0;
+}
+
+.workspace-wallet-redeem-dialog {
+    display: grid;
+    gap: 22px;
+    padding: 28px;
+    color: var(--user-ink);
+}
+
+.workspace-wallet-redeem-dialog header h2 {
+    margin: 8px 0 0;
+    color: var(--user-ink);
+    font-size: 22px;
+    font-weight: 650;
+}
+
+.workspace-wallet-redeem-dialog .workspace-wallet-kicker {
+    color: var(--user-accent);
+}
+
+.workspace-wallet-redeem-user {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 48px;
+}
+
+.workspace-wallet-redeem-user .wallet-topup-avatar {
+    width: 44px;
+    height: 44px;
+}
+
+.workspace-wallet-redeem-user strong {
+    color: var(--user-ink);
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.workspace-wallet-redeem-form {
+    display: grid;
+    gap: 12px;
+}
+
+.workspace-wallet-redeem-form .ant-input {
+    height: 48px;
+}
+
+.workspace-wallet-redeem-form .ant-btn {
+    height: 46px;
+    font-weight: 600;
+}
+
+.workspace-wallet-redeem-notice {
+    border-top: 1px solid var(--user-border);
+    padding-top: 16px;
+}
+
+.workspace-wallet-redeem-notice strong {
+    color: var(--user-ink);
+    font-size: 13px;
+}
+
+.workspace-wallet-redeem-notice p {
+    margin: 6px 0 0;
+    color: var(--user-ink-muted);
+    font-size: 12px;
+    line-height: 1.7;
+}
+
+.workspace-wallet-redeem-notice .workspace-wallet-redeem-link {
+    margin: 12px 0 0;
+}
+
+@media (max-width: 560px) {
+    .workspace-wallet-redeem-dialog {
+        gap: 18px;
+        padding: 22px;
+    }
+}
+
 .workspace-wallet-shell {
     display: flex;
     flex-direction: column;
@@ -25338,7 +25468,9 @@ html:not(.dark) .creation-home .creation-user-message-copy-wrap {
     align-items: center;
     justify-content: space-between;
     gap: 24px;
-    padding: 20px 56px 12px 24px;
+    width: min(calc(100% - 48px), 760px);
+    margin: 0 auto;
+    padding: 20px 0 12px;
     background: transparent;
 }
 
@@ -25399,11 +25531,11 @@ html:not(.dark) .creation-home .creation-user-message-copy-wrap {
 .workspace-wallet-tabs {
     display: inline-flex;
     flex-shrink: 0;
-    align-self: flex-start;
-    max-width: calc(100% - 48px);
+    align-self: center;
+    max-width: min(calc(100% - 48px), 760px);
     overflow-x: auto;
     gap: 2px;
-    margin: 0 24px;
+    margin: 0 auto;
     border-radius: 12px;
     background: color-mix(in srgb, var(--user-ink) 7%, transparent);
     padding: 4px;
@@ -25460,7 +25592,8 @@ html:not(.dark) .creation-home .creation-user-message-copy-wrap {
     min-height: 0;
     gap: 16px;
     overflow: auto;
-    margin: 12px 24px 20px;
+    width: min(calc(100% - 48px), 760px);
+    margin: 12px auto 20px;
     padding: 0;
 }
 
@@ -25884,18 +26017,20 @@ html:not(.dark) .creation-home .creation-user-message-copy-wrap {
     .workspace-wallet-header {
         align-items: stretch;
         flex-direction: column;
-        padding: 24px 24px 20px;
+        width: calc(100% - 32px);
+        padding: 24px 0 20px;
     }
     .workspace-wallet-balance {
         min-width: 0;
     }
     .workspace-wallet-tabs {
-        margin: 0 16px;
+        margin: 0 auto;
         max-width: calc(100% - 32px);
         overflow-x: auto;
     }
     .workspace-wallet-content {
-        margin: 16px 16px 16px;
+        width: calc(100% - 32px);
+        margin: 16px auto;
         padding: 0;
     }
     .workspace-wallet-products {
@@ -27876,4 +28011,412 @@ html:not(.dark) .creation-home .creation-user-message-copy-wrap {
 .canvas-image-preview-modal .ant-modal-close:hover {
     background: color-mix(in srgb, black 78%, transparent) !important;
     color: white !important;
+}
+
+/* -------------------------------------------------------------------------
+   Linghuan reference visual sync
+   仅收敛用户工作区的视觉几何与层级，不改变目标项目的导航路由、团队积分和社区入口。
+   ------------------------------------------------------------------------- */
+.app-user-workspace {
+    --workspace-reference-sidebar: 200px;
+    --workspace-reference-collapsed: 64px;
+    --workspace-reference-topbar: 56px;
+    --workspace-reference-row: 36px;
+    --workspace-reference-primary-row: 40px;
+    --workspace-reference-nav-icon-size: 14px;
+    --workspace-reference-brand-mark-size: 30px;
+    --workspace-reference-brand-wordmark-size: 16px;
+    --workspace-reference-page-bg: #f4f4f5;
+    --user-page-bg: #f4f4f5;
+    --user-ink: #111111;
+    --user-ink-muted: rgba(17, 17, 17, 0.58);
+    --user-ink-soft: rgba(17, 17, 17, 0.42);
+    --user-nav-active-bg: #c8c8cd;
+    --user-surface-hover: rgba(72, 72, 73, 0.06);
+    background: var(--workspace-reference-page-bg);
+}
+
+.app-user-workspace .app-workspace-sidebar {
+    width: var(--workspace-reference-sidebar) !important;
+    flex-basis: var(--workspace-reference-sidebar) !important;
+    background: #f7f7f8 !important;
+    border-right: 0 !important;
+    box-shadow: none !important;
+}
+
+.app-user-workspace .app-workspace-sidebar.is-collapsed {
+    width: var(--workspace-reference-collapsed) !important;
+    flex-basis: var(--workspace-reference-collapsed) !important;
+}
+
+.app-user-workspace .app-workspace-sidebar-nav {
+    background: #f7f7f8 !important;
+}
+
+.app-user-workspace .app-workspace-sidebar-brand-row {
+    min-height: 56px !important;
+    gap: 2px !important;
+    padding: 8px 12px 0 8px !important;
+}
+
+.app-user-workspace .app-workspace-sidebar-brand-button {
+    min-height: var(--workspace-reference-row) !important;
+    gap: 8px !important;
+    border-radius: 12px !important;
+    padding: 0 8px !important;
+}
+
+.app-user-workspace .app-workspace-sidebar-brand-row:not(.is-collapsed) .app-workspace-sidebar-brand-button {
+    padding-left: 14px !important;
+}
+
+.app-user-workspace .app-workspace-brand-toggle {
+    width: 30px !important;
+    height: 30px !important;
+    border-radius: 8px !important;
+    color: rgba(25, 25, 28, 0.42) !important;
+}
+
+.app-user-workspace .app-workspace-brand-mark {
+    width: var(--workspace-reference-brand-mark-size) !important;
+    height: var(--workspace-reference-brand-mark-size) !important;
+    flex: 0 0 var(--workspace-reference-brand-mark-size) !important;
+    border-radius: 8px !important;
+}
+
+.app-user-workspace .app-workspace-brand-wordmark {
+    font-family: var(--font-sans) !important;
+    font-size: var(--workspace-reference-brand-wordmark-size) !important;
+    font-weight: 600 !important;
+    line-height: var(--lh-heading) !important;
+    letter-spacing: 0 !important;
+}
+
+.app-user-workspace .app-workspace-sidebar-scroll-area {
+    gap: 24px !important;
+    padding: 24px 12px 12px !important;
+}
+
+.app-user-workspace .app-workspace-nav-link {
+    min-height: var(--workspace-reference-row) !important;
+    padding: 0 12px !important;
+    border-radius: 12px !important;
+    color: var(--user-ink-muted) !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    letter-spacing: 0 !important;
+}
+
+.app-user-workspace .app-workspace-nav-link .app-workspace-nav-main {
+    gap: 8px !important;
+}
+
+.app-user-workspace .app-workspace-nav-link:not(.is-collapsed) .app-workspace-nav-icon {
+    width: 18px !important;
+    height: 18px !important;
+    flex: 0 0 18px !important;
+    border-radius: 8px !important;
+}
+
+.app-user-workspace .app-workspace-nav-link:not(.is-collapsed) .app-workspace-nav-icon svg,
+.app-user-workspace .app-workspace-nav-link:not(.is-collapsed) .app-workspace-nav-main > svg {
+    width: var(--workspace-reference-nav-icon-size) !important;
+    height: var(--workspace-reference-nav-icon-size) !important;
+}
+
+.app-user-workspace .app-workspace-nav-link.is-active:not(.is-collapsed) {
+    background: var(--user-nav-active-bg) !important;
+    color: var(--user-ink) !important;
+    font-weight: 600 !important;
+}
+
+.app-user-workspace .app-workspace-nav-link:hover:not(.is-active),
+.app-user-workspace .app-workspace-nav-link:focus-visible:not(.is-active) {
+    background: rgba(72, 72, 73, 0.04) !important;
+    color: var(--user-ink) !important;
+}
+
+.app-user-workspace .app-workspace-nav-active-pill {
+    position: absolute;
+    z-index: -1;
+    inset: 0;
+    border-radius: 12px;
+    background: var(--user-nav-active-bg);
+    pointer-events: none;
+}
+
+.app-user-workspace .app-workspace-nav-group-toggle {
+    box-sizing: border-box !important;
+    min-height: 28px !important;
+    padding: 4px 12px !important;
+    color: var(--user-ink-soft) !important;
+    font-size: 12px !important;
+    letter-spacing: 0.02em !important;
+}
+
+.app-user-workspace .app-workspace-nav-group-toggle > svg {
+    display: none !important;
+}
+
+.app-user-workspace .app-workspace-nav-group-label {
+    font-weight: 600 !important;
+}
+
+.app-user-workspace .app-workspace-topbar {
+    height: var(--workspace-reference-topbar) !important;
+    min-height: var(--workspace-reference-topbar) !important;
+    padding-inline: 20px !important;
+    border-bottom: 0 !important;
+    background: var(--user-page-bg) !important;
+}
+
+.app-user-workspace .creation-home-heading h1 {
+    color: var(--user-ink) !important;
+    font-size: clamp(22px, 2vw, 32px) !important;
+    font-weight: 600 !important;
+    letter-spacing: 0 !important;
+    line-height: 1.12 !important;
+}
+
+.app-user-workspace .creation-home-heading p {
+    color: var(--user-ink-muted) !important;
+    font-size: 14px !important;
+}
+
+.app-user-workspace .home-page {
+    color: var(--user-ink) !important;
+}
+
+.app-user-workspace .home-prompt-section > h2 {
+    color: var(--user-ink) !important;
+    font-size: clamp(22px, 2vw, 28px) !important;
+    font-weight: 600 !important;
+    letter-spacing: 0 !important;
+}
+
+@media (max-width: 680px) {
+    .app-user-workspace .app-workspace-sidebar {
+        width: 180px !important;
+        flex-basis: 180px !important;
+    }
+}
+
+.dark .app-user-workspace {
+    --user-ink: #f3f3f5;
+    --user-ink-muted: rgba(243, 243, 245, 0.72);
+    --user-ink-soft: rgba(243, 243, 245, 0.56);
+    --user-nav-active-bg: #343439;
+    --user-surface-hover: #303036;
+    --workspace-reference-page-bg: #121213;
+    --user-page-bg: #121213;
+    background: var(--workspace-reference-page-bg);
+}
+
+.dark .app-user-workspace .app-workspace-sidebar,
+.dark .app-user-workspace .app-workspace-sidebar-nav {
+    background: #171718 !important;
+}
+
+/* Every authenticated page uses the same canvas background as the home page. */
+.app-user-workspace .app-workspace-stage,
+.app-user-workspace .app-user-content,
+.app-user-workspace .app-workspace-grid,
+.app-user-workspace .app-workspace-page,
+.app-user-workspace .workspace-route-content,
+.app-user-workspace .library-page,
+.app-user-workspace .settings-page,
+.app-user-workspace .settings-page .settings-content,
+.app-user-workspace .assets-library-page,
+.app-user-workspace .project-library-page {
+    background: var(--user-page-bg) !important;
+}
+
+/* Match the desktop linghuan shell with a slightly deeper page content surface. */
+.app-workspace-shell:not(.is-spatial) {
+    --workspace-canvas: #f4f4f5;
+    --workspace-page: #f4f4f5;
+    --workspace-navigation: #efeff0;
+    --workspace-sidebar: #efeff0;
+    --workspace-content: #f4f4f5;
+    --user-page-bg: #f4f4f5;
+    --user-content-page-bg: #f4f4f5;
+    background: var(--workspace-page);
+}
+
+.app-workspace-shell:not(.is-spatial) .app-workspace-sidebar,
+.app-workspace-shell:not(.is-spatial) .app-workspace-sidebar-nav {
+    background: var(--workspace-navigation) !important;
+}
+
+.app-workspace-shell:not(.is-spatial) .app-workspace-stage,
+.app-workspace-shell:not(.is-spatial) .workspace-route-content,
+.app-workspace-shell:not(.is-spatial) .app-workspace-page,
+.app-workspace-shell:not(.is-spatial) .app-user-content,
+.app-workspace-shell:not(.is-spatial) .home-page {
+    background: var(--workspace-content) !important;
+}
+
+.app-workspace-shell:not(.is-spatial) .app-workspace-topbar {
+    background: var(--workspace-content) !important;
+}
+
+.dark .app-workspace-shell:not(.is-spatial) {
+    --workspace-canvas: #101011;
+    --workspace-page: #101011;
+    --workspace-navigation: #171718;
+    --workspace-sidebar: #171718;
+    --workspace-content: #121213;
+    --user-page-bg: #121213;
+    --user-content-page-bg: #121213;
+}
+
+.app-user-workspace :is(.academy-page, .community-page) {
+    background: var(--user-content-page-bg, #f4f4f5) !important;
+}
+
+.dark .app-user-workspace .app-workspace-topbar {
+    background: var(--workspace-reference-page-bg) !important;
+}
+
+.app-user-workspace .app-workspace-sidebar-create {
+    display: flex;
+    min-height: var(--workspace-reference-row);
+    box-sizing: border-box;
+    margin: 8px 12px 0;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 10px;
+    padding: 0 11px;
+    border-radius: 10px;
+    background: var(--user-ink);
+    color: var(--user-surface);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0;
+    transition:
+        background-color 160ms cubic-bezier(0.16, 1, 0.3, 1),
+        transform 160ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.app-user-workspace .app-workspace-sidebar-create-icon {
+    display: grid;
+    width: 20px;
+    height: 20px;
+    flex: 0 0 20px;
+    place-items: center;
+}
+
+.app-user-workspace .app-workspace-sidebar-create svg {
+    width: 16px;
+    height: 16px;
+    flex: 0 0 auto;
+    stroke-width: 2.4;
+}
+
+.app-user-workspace .app-workspace-sidebar-create:hover,
+.app-user-workspace .app-workspace-sidebar-create:focus-visible {
+    background: color-mix(in srgb, var(--user-ink) 88%, #fff);
+}
+
+.app-user-workspace .app-workspace-sidebar-create:active {
+    transform: translateY(1px);
+}
+
+.app-user-workspace .app-workspace-sidebar-create.is-collapsed {
+    width: 40px;
+    margin-inline: auto;
+    justify-content: center;
+    padding: 0;
+}
+
+.app-user-workspace .app-workspace-sidebar-scroll-area {
+    gap: 16px !important;
+    padding-top: 4px !important;
+}
+
+.app-user-workspace .app-workspace-sidebar-navigation > .app-workspace-nav-group[data-nav-group-heading=""] + .app-workspace-nav-group[data-nav-group-heading=""] {
+    padding-top: 8px !important;
+}
+
+.app-user-workspace .app-workspace-sidebar-brand-row {
+    position: relative;
+}
+
+.app-user-workspace .app-workspace-brand-toggle {
+    display: grid !important;
+    width: 28px !important;
+    height: 28px !important;
+    flex: 0 0 28px !important;
+    place-items: center;
+    border: 1px solid var(--user-border) !important;
+    border-radius: 7px !important;
+    background: transparent !important;
+    color: var(--user-ink-muted) !important;
+}
+
+.app-user-workspace .app-workspace-brand-toggle:hover,
+.app-user-workspace .app-workspace-brand-toggle:focus-visible {
+    background: var(--user-surface-hover) !important;
+    color: var(--user-ink) !important;
+}
+
+.app-user-workspace .app-workspace-brand-toggle-glyph {
+    display: inline-flex;
+    align-items: center;
+}
+
+.app-user-workspace .app-workspace-brand-toggle-glyph svg {
+    width: 14px;
+    height: 14px;
+}
+
+.app-user-workspace .app-workspace-brand-toggle-divider {
+    width: 1px;
+    height: 13px;
+    margin-left: 2px;
+    background: currentColor;
+    opacity: 0.72;
+}
+
+.app-user-workspace .app-workspace-sidebar-brand-row.is-collapsed > .app-workspace-brand-toggle {
+    position: absolute;
+    top: calc(50% + 5px);
+    left: 50%;
+    transform: translate(-50%, -50%);
+    opacity: 0;
+    pointer-events: none;
+    transition:
+        opacity 140ms ease-out,
+        background-color 160ms cubic-bezier(0.16, 1, 0.3, 1),
+        color 160ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.app-user-workspace .app-workspace-sidebar-brand-row.is-collapsed:hover .app-workspace-sidebar-brand-button,
+.app-user-workspace .app-workspace-sidebar-brand-row.is-collapsed > .app-workspace-brand-toggle:focus-visible {
+    opacity: 0;
+}
+
+.app-user-workspace .app-workspace-sidebar-brand-row.is-collapsed:hover > .app-workspace-brand-toggle,
+.app-user-workspace .app-workspace-sidebar-brand-row.is-collapsed > .app-workspace-brand-toggle:focus-visible {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.app-user-workspace .app-workspace-credit-mark {
+    display: inline-grid;
+    width: 24px;
+    height: 24px;
+    flex: 0 0 auto;
+    place-items: center;
+}
+
+.app-user-workspace .app-workspace-credit-mark svg {
+    width: 1em;
+    height: 1em;
+    overflow: visible;
+}
+
+.app-user-workspace .app-workspace-credit-mark.is-compact {
+    width: 18px;
+    height: 18px;
 }

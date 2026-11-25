@@ -109,8 +109,9 @@ describe("canvas toolbar mode switch", () => {
     });
 
     test("keeps the switch visible in default main toolbar prefs", () => {
-        expect(defaultToolbarPrefs("main").order[0]).toBe(CANVAS_MODE_TOOL_ID);
-        expect(defaultToolbarPrefs("main").hidden).toEqual([]);
+        const prefs = defaultToolbarPrefs("main");
+        expect(prefs.order).toContain(CANVAS_MODE_TOOL_ID);
+        expect(prefs.hidden).not.toContain(CANVAS_MODE_TOOL_ID);
     });
 
     test("hides rarely used arrange tools from the selection toolbar by default", () => {

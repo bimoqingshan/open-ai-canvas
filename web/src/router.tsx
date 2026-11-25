@@ -1,5 +1,5 @@
 import { lazy, Suspense, type ReactNode } from "react";
-import { createBrowserRouter, Navigate, Outlet, redirectDocument, useLocation, type RouteObject } from "react-router";
+import { createBrowserRouter, Navigate, Outlet, redirectDocument, useLocation, useNavigate, type RouteObject } from "react-router";
 import { lazyAdminPage } from "@/pages/admin/admin-page-loader";
 
 import { AuthDialogHost } from "@/components/auth/auth-dialog-host";
@@ -19,6 +19,7 @@ import { teamIdFromPath } from "@/lib/team-query-keys";
 import { workspacePagePath, workspaceTeamId } from "@/lib/workspace-routes";
 
 const AdminPage = preloadableLazy(() => import("@/pages/admin"));
+const CliSkillPage = lazy(() => import("@/pages/cli-skill"));
 const EcommerceManagementPage = lazyAdminPage(() => import("@/pages/admin/ecommerce-management-page"));
 const EcommerceAgentConfigPage = lazyAdminPage(() => import("@/pages/admin/ecommerce-agent-config-page"));
 const AnalyticsPage = lazyAdminPage(() => import("@/pages/admin/admin-route-pages").then((module) => ({ default: module.AnalyticsPage })));
@@ -48,6 +49,13 @@ const EmailLogsPage = lazyAdminPage(() => import("@/pages/admin/email-logs/email
 const RedemptionCodesPage = lazyAdminPage(() => import("@/pages/admin/redemption-codes/redemption-codes-page"));
 const RuntimePolicySettingsPage = lazyAdminPage(() => import("@/pages/admin/settings/runtime-policy-settings-page"));
 const AppearanceSettingsPage = lazyAdminPage(() => import("@/pages/admin/settings/appearance-settings-page"));
+const NavigationMenuPage = lazyAdminPage(() => import("@/pages/admin/settings/navigation-menu-page"));
+const ContactUsSettingsPage = lazyAdminPage(() => import("@/pages/admin/settings/navigation-menu-page").then((module) => ({ default: module.ContactUsSettingsPage })));
+const AdminCommunityWorksPage = lazyAdminPage(() => import("@/pages/admin/community/community-admin-pages").then((module) => ({ default: module.AdminCommunityWorksPage })));
+const AdminCreatorChallengesPage = lazyAdminPage(() => import("@/pages/admin/community/community-admin-pages").then((module) => ({ default: module.AdminCreatorChallengesPage })));
+const LinghuaAcademySettingsPage = lazyAdminPage(() => import("@/pages/admin/settings/academy-settings-page"));
+const LinghuaHomeCarouselSettingsPage = lazyAdminPage(() => import("@/pages/admin/settings/home-carousel-settings-page"));
+const AcademyPage = preloadableLazy(() => import("@/pages/academy"));
 const DrawingEngineSettingsPage = lazyAdminPage(() => import("@/pages/admin/settings/drawing-engine-settings-page"));
 const StorageSettingsPage = lazyAdminPage(() => import("@/pages/admin/settings/storage-settings-page"));
 const ArkPrivateAssetsSettingsPage = lazyAdminPage(() => import("@/pages/admin/settings/ark-private-assets-settings-page"));
@@ -70,6 +78,13 @@ const CanvasProjectPage = workspaceRoutePages.canvasProject;
 const SharedCanvasPage = preloadableLazy(() => import("@/pages/canvas/shared"));
 const ArkPortraitResultPage = preloadableLazy(() => import("@/pages/ark-portrait-result"));
 const CreatePage = workspaceRoutePages.create;
+const StudioHomePage = preloadableLazy(() => import("@/pages/studio-home"));
+const InspirationHallPage = preloadableLazy<{ onUse: (item: import("@/lib/inspirations/catalog").CreationInspiration) => void }>(() => import("@/pages/inspirations"));
+const TvShowPage = preloadableLazy<object>(() => import("@/pages/community/community-pages").then((module) => ({ default: module.TvShowPage })));
+const CommunityWorkDetailPage = preloadableLazy<object>(() => import("@/pages/community/community-pages").then((module) => ({ default: module.CommunityWorkDetailPage })));
+const MyCommunityWorksPage = preloadableLazy<object>(() => import("@/pages/community/community-pages").then((module) => ({ default: module.MyCommunityWorksPage })));
+const CreatorChallengesPage = preloadableLazy<object>(() => import("@/pages/community/community-pages").then((module) => ({ default: module.CreatorChallengesPage })));
+const CreatorChallengeDetailPage = preloadableLazy<object>(() => import("@/pages/community/community-pages").then((module) => ({ default: module.CreatorChallengeDetailPage })));
 const EcommercePage = workspaceRoutePages.ecommerce;
 const ImageWorkbenchPage = workspaceRoutePages.imageWorkbench;
 const VideoWorkbenchPage = workspaceRoutePages.videoWorkbench;
@@ -84,6 +99,7 @@ const ProjectDetailPage = workspaceRoutePages.projectDetail;
 const ProjectCreatePage = workspaceRoutePages.projectCreate;
 const SettingsPage = workspaceRoutePages.settings;
 const ReferralPage = workspaceRoutePages.referral;
+const ProfileCenterPage = lazy(() => import("@/pages/profile-center"));
 const AdminReferralPage = lazyAdminPage(() => import("@/pages/admin/referral/referral-admin-page"));
 const UserLayout = preloadableLazy(() => import("@/layouts/user-layout"));
 const TeamsPage = preloadableLazy(() => import("@/pages/teams"));
@@ -123,6 +139,11 @@ function RootLayout() {
     );
 }
 
+function InspirationHallRoute() {
+    const navigate = useNavigate();
+    return <InspirationHallPage onUse={(item) => navigate("/create", { state: { inspirationPrompt: item.prompt, inspirationMode: item.mode } })} />;
+}
+
 /**
  * DEV 专用实验室路由。
  *
@@ -160,7 +181,15 @@ const routes: RouteObject[] = [
         element: <AuthenticatedWorkspaceLayout />,
         errorElement: <RouteErrorPage />,
         children: [
-            { path: "/", element: deferred(<CreatePage />) },
+            { path: "/", element: deferred(<StudioHomePage />) },
+            { path: "/linghua/community", element: deferred(<TvShowPage />) },
+            { path: "/linghua/community/:id", element: deferred(<CommunityWorkDetailPage />) },
+            { path: "/linghua/community/mine", element: <RequireAuth>{deferred(<MyCommunityWorksPage />)}</RequireAuth> },
+            { path: "/linghua/challenges", element: deferred(<CreatorChallengesPage />) },
+            { path: "/linghua/challenges/:id", element: deferred(<CreatorChallengeDetailPage />) },
+            { path: "/inspirations", element: <RequireAuth>{deferred(<InspirationHallRoute />)}</RequireAuth> },
+            { path: "/linghua/learning", element: deferred(<AcademyPage />) },
+            { path: "/linghua/learning/:courseId", element: deferred(<AcademyPage />) },
             { path: "/create", element: deferred(<CreatePage />) },
             { path: "/ecommerce", element: <RequireAuth>{deferred(<EcommercePage />)}</RequireAuth> },
             {
@@ -187,7 +216,14 @@ const routes: RouteObject[] = [
                     </RequireAuth>
                 ),
             },
-            { path: "/assets", element: <RequireAuth>{deferred(<AssetsPage />)}</RequireAuth> },
+            {
+                path: "/assets",
+                element: (
+                    <RequireAuth>
+                        <RequireFeature feature="assetsEnabled">{deferred(<AssetsPage />)}</RequireFeature>
+                    </RequireAuth>
+                ),
+            },
             {
                 path: "/teams",
                 element: (
@@ -207,7 +243,7 @@ const routes: RouteObject[] = [
                     { index: true, element: <Navigate to="canvas" replace /> },
                     { path: "canvas", element: deferred(<CanvasPage />) },
                     { path: "canvas/:id", element: deferred(<CanvasProjectPage />, <CanvasRefreshShell />) },
-                    { path: "assets", element: deferred(<AssetsPage />) },
+                    { path: "assets", element: <RequireFeature feature="assetsEnabled">{deferred(<AssetsPage />)}</RequireFeature> },
                     { path: "create", element: <RequireFeature feature="creditsEnabled">{deferred(<CreatePage />)}</RequireFeature> },
                     { path: "members", element: deferred(<TeamMembersPage />) },
                     { path: "wallet", element: <RequireFeature feature="creditsEnabled">{deferred(<TeamWalletPage />)}</RequireFeature> },
@@ -237,6 +273,8 @@ const routes: RouteObject[] = [
                 element: <RequireAuth>{null}</RequireAuth>,
             },
             { path: "/settings", element: <RequireAuth>{deferred(<SettingsPage />)}</RequireAuth> },
+            { path: "/profile", element: <RequireAuth>{deferred(<ProfileCenterPage />)}</RequireAuth> },
+            { path: "/cli-skill", element: <RequireAuth>{deferred(<CliSkillPage />)}</RequireAuth> },
             { path: "/referral", element: <RequireAuth>{deferred(<ReferralPage />)}</RequireAuth> },
             {
                 path: "/projects",
@@ -309,6 +347,13 @@ const routes: RouteObject[] = [
                     { path: "plugins", element: <AdminPluginsPage /> },
                     { path: "official-assets", element: <AdminOfficialAssetsPage /> },
                     { path: "official-asset-recommendations", element: <AdminOfficialAssetRecommendationsPage /> },
+                    { path: "linghua", element: <Navigate to="/admin/linghua/community/works" replace /> },
+                    { path: "linghua/community/works", element: <AdminCommunityWorksPage /> },
+                    { path: "linghua/community/challenges", element: <AdminCreatorChallengesPage /> },
+                    { path: "linghua/home-carousel", element: <LinghuaHomeCarouselSettingsPage /> },
+                    { path: "linghua/academy", element: <LinghuaAcademySettingsPage /> },
+                    { path: "linghua/navigation", element: <NavigationMenuPage /> },
+                    { path: "linghua/contact", element: <ContactUsSettingsPage /> },
                     { path: "mcp", element: <AdminMCPPage /> },
                     { path: "workbench-tools", element: <WorkbenchToolsPage /> },
                     { path: "pose-library", element: <PoseLibraryAdminPage /> },
@@ -328,6 +373,7 @@ const routes: RouteObject[] = [
                     { path: "logs", element: <LogsPage /> },
                     { path: "settings", element: <Navigate to="runtime-policy" replace /> },
                     { path: "settings/appearance", element: <AppearanceSettingsPage /> },
+                    { path: "settings/navigation-menu", element: <Navigate to="/admin/linghua/navigation" replace /> },
                     { path: "settings/drawing-engine", element: <DrawingEngineSettingsPage /> },
                     { path: "settings/concurrency", element: <Navigate to="/admin/settings/runtime-policy" replace /> },
                     { path: "settings/runtime-policy", element: <RuntimePolicySettingsPage /> },

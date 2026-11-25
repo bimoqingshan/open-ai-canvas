@@ -24,7 +24,7 @@
 | `images` | 以显式顺序生成 `images` URL 数组；特惠最多 1 张，稳定/高速最多 5 张。宿主将本地资源转换为短期公网 URL。拒绝 mask。 |
 | `imageCount` | 未设置或 1；上游固定 `n=1`，不是返回图片的截断数量。 |
 | `providerOptions.kacang-midjourney.raw` | 稳定/高速 `raw`，默认 false。 |
-| `providerOptions.kacang-midjourney.quality` | 仅稳定 `mj-*`，数值 0.25、0.5、1、2，默认 1。不使用宿主 `quality` 的 1K/2K/4K 值。 |
+| `providerOptions.kacang-midjourney.quality` | 仅稳定 `mj-*`，画质选项为 0.25、0.5、1、2，默认 1；发送上游时统一转换为 JSON 字符串 `"0.25"`、`"0.5"`、`"1"`、`"2"`。不使用宿主 `quality` 的 1K/2K/4K 值。 |
 | `providerOptions.kacang-midjourney.stylize/chaos/weird` | 仅稳定 `mj-*`，默认 100/0/0，范围分别 0–1000、0–100、0–3000。 |
 | `providerOptions.kacang-midjourney.iw/cw/sw/dw` | 仅稳定 `mj-*`；可选，范围 0–3、0–100、0–1000、0–100。 |
 | `providerOptions.kacang-midjourney.seed/negative_prompt/tile/cref/sref/dref` | 仅稳定 `mj-*`；调用方明确指定时才发送，不设未声明的默认值。 |
@@ -45,7 +45,7 @@
 - 供应商托管链接有有效期；生成成功不等于转存成功，最终必须以宿主资源 ready 与任务成功为准。已有任务只查询，不重新生成。
 - 取消和独立结果下载端点未声明；供应商未提供适用于本生图入口的相应合同。
 
-请求示例：`{"model":"mj-v8.2","prompt":"生成一张氛围感美女照片","size":"9:16","raw":false,"quality":1,"stylize":100,"chaos":0,"weird":0,"hd":false,"n":1}`。
+请求示例：`{"model":"mj-v8.2","prompt":"生成一张氛围感美女照片","size":"9:16","raw":false,"quality":"1","stylize":100,"chaos":0,"weird":0,"hd":false,"n":1}`。
 
 ## 动态图片参数
 
@@ -61,7 +61,7 @@
   "apiVersion": "yingce.plugin/v2",
   "id": "kacang-midjourney",
   "name": "卡藏 Midjourney",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "author": "影绘",
   "description": "适配卡藏特惠、V7特惠与稳定/高速生图，按公开模型合同映射请求并查询、保存全部结果。",
   "enabled": true,
@@ -1059,7 +1059,7 @@
             "name": "providerOptions",
             "type": "object",
             "mapping": "kacang-midjourney.raw/quality/stylize/chaos/weird/seed/negative_prompt/tile/iw/cref/sref/dref/cw/sw/dw/hd",
-            "description": "默认 raw=false；稳定 mj-* 的数值 quality 默认1，不能将1K/2K分辨率作为quality。高速版仅映射raw。后续action任务不属于本生图插件。"
+            "description": "默认 raw=false；稳定 mj-* 的 quality 默认字符串\"1\"，数值画质选项转为 JSON 字符串发送，不能将1K/2K分辨率作为quality。高速版仅映射raw。后续action任务不属于本生图插件。"
           }
         ],
         "validations": [
@@ -1811,13 +1811,15 @@
                 },
                 "then": null,
                 "else": {
-                  "$toFloat": {
-                    "$coalesce": [
-                      {
-                        "$ref": "request.providerOptions.kacang-midjourney.quality"
-                      },
-                      1
-                    ]
+                  "$toString": {
+                    "$toFloat": {
+                      "$coalesce": [
+                        {
+                          "$ref": "request.providerOptions.kacang-midjourney.quality"
+                        },
+                        1
+                      ]
+                    }
                   }
                 }
               }
@@ -1925,11 +1927,12 @@
         },
         "response": {
           "taskIdPaths": [
+            "data.0.task_id",
             "data.task_id",
-            "task_id",
-            "id"
+            "task_id"
           ],
           "statusPaths": [
+            "data.0.status",
             "data.status",
             "status"
           ],
@@ -1939,10 +1942,9 @@
             "error.code"
           ],
           "messagePaths": [
+            "data.0.error_message",
             "data.error_message",
-            "error_message",
-            "error.message",
-            "message"
+            "error_message"
           ],
           "resultEphemeral": true,
           "usage": {
@@ -1958,88 +1960,56 @@
           "images": {
             "$concatArrays": [
               {
-                "$map": {
-                  "from": {
-                    "$coalesce": [
-                      {
-                        "$ref": "response.data.result.data.image_urls"
-                      },
-                      {
-                        "$ref": "response.result.data.image_urls"
-                      }
-                    ]
+                "$coalesce": [
+                  {
+                    "$ref": "response.data.0.result.data.image_urls"
                   },
-                  "as": "url",
-                  "in": {
-                    "url": {
-                      "$ref": "url"
-                    }
-                  }
-                }
+                  {
+                    "$ref": "response.data.result.data.image_urls"
+                  },
+                  {
+                    "$ref": "response.result.data.image_urls"
+                  },
+                  []
+                ]
               },
               {
                 "$if": {
                   "condition": {
-                    "$and": [
+                    "$lte": [
                       {
-                        "$gt": [
-                          {
-                            "$len": {
-                              "$toString": {
-                                "$coalesce": [
-                                  {
-                                    "$ref": "response.data.result.data.grid_image_url"
-                                  },
-                                  {
-                                    "$ref": "response.result.data.grid_image_url"
-                                  }
-                                ]
-                              }
-                            }
-                          },
-                          0
-                        ]
-                      },
-                      {
-                        "$not": {
-                          "$in": [
+                        "$len": {
+                          "$coalesce": [
                             {
-                              "$coalesce": [
-                                {
-                                  "$ref": "response.data.result.data.grid_image_url"
-                                },
-                                {
-                                  "$ref": "response.result.data.grid_image_url"
-                                }
-                              ]
+                              "$ref": "response.data.0.result.data.image_urls"
                             },
                             {
-                              "$coalesce": [
-                                {
-                                  "$ref": "response.data.result.data.image_urls"
-                                },
-                                {
-                                  "$ref": "response.result.data.image_urls"
-                                }
-                              ]
-                            }
+                              "$ref": "response.data.result.data.image_urls"
+                            },
+                            {
+                              "$ref": "response.result.data.image_urls"
+                            },
+                            []
                           ]
                         }
-                      }
+                      },
+                      4
                     ]
                   },
                   "then": [
                     {
-                      "url": {
-                        "$coalesce": [
-                          {
-                            "$ref": "response.data.result.data.grid_image_url"
-                          },
-                          {
-                            "$ref": "response.result.data.grid_image_url"
-                          }
-                        ]
-                      }
+                      "$coalesce": [
+                        {
+                          "$ref": "response.data.0.result.data.grid_image_url"
+                        },
+                        {
+                          "$ref": "response.data.result.data.grid_image_url"
+                        },
+                        {
+                          "$ref": "response.result.data.grid_image_url"
+                        },
+                        ""
+                      ]
                     }
                   ],
                   "else": []

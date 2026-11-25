@@ -85,6 +85,7 @@ export function buildNodeConfig(globalConfig: AiConfig, node: CanvasNodeData, mo
         audioLanguage: node.metadata?.audioLanguage || globalConfig.audioLanguage || defaultConfig.audioLanguage,
         audioDialect: node.metadata?.audioDialect || globalConfig.audioDialect || defaultConfig.audioDialect,
         audioInstructions: node.metadata?.audioInstructions || globalConfig.audioInstructions || defaultConfig.audioInstructions,
+        audioInstrumental: node.metadata?.instrumental === undefined ? globalConfig.audioInstrumental || "" : String(node.metadata.instrumental),
         audioEmotionControlMethod: node.metadata?.audioEmotionControlMethod || globalConfig.audioEmotionControlMethod || defaultConfig.audioEmotionControlMethod,
         audioEmotionRandom: node.metadata?.audioEmotionRandom || globalConfig.audioEmotionRandom || defaultConfig.audioEmotionRandom,
         audioEmotionHappy: node.metadata?.audioEmotionHappy || globalConfig.audioEmotionHappy || defaultConfig.audioEmotionHappy,
@@ -121,5 +122,6 @@ export function audioConfigPatch(key: CanvasAudioSettingKey, value: string) {
     if (key === "audioFormat") return { audioFormat: value };
     if (key === "audioSpeed") return { audioSpeed: value };
     if (key === "audioInstructions") return { audioInstructions: value };
+    if (key === "instrumental") return { instrumental: value === "" ? undefined : value === "true" };
     return { [key]: value };
 }

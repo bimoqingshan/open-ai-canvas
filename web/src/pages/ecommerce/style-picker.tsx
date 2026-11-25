@@ -1,5 +1,5 @@
 import { Modal } from "antd";
-import { ArrowUpRight, Check, LoaderCircle, PencilLine, Sparkles, Wand2 } from "lucide-react";
+import { ArrowRight, Check, LoaderCircle, PencilLine, Sparkles, Wand2 } from "lucide-react";
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import type { EcommerceCreativeDirection, EcommerceStyleRewrite } from "@/services/api/ecommerce";
 import { DirectionEditor, directionDescription, directionSwatches, rewriteDirection } from "./direction-cards";
@@ -263,7 +263,7 @@ export function CommerceStylePicker({
                             ) : (
                                 <>
                                     确定，按此风格生成
-                                    <ArrowUpRight size={15} aria-hidden="true" />
+                                    <ArrowRight size={15} aria-hidden="true" />
                                 </>
                             )}
                         </button>

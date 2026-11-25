@@ -1,7 +1,10 @@
 import type { DeepStringRecord } from "../../zh-CN";
 import type { zhCN } from "./zh-CN";
+import { enUS } from "./en-US";
 
 export const koKR: DeepStringRecord<typeof zhCN> = {
+    home: enUS.home,
+    composer: enUS.composer,
     historySync: {
         manage: "기록 사본 보기 ({{count}})",
         backupsTitle: "기록 충돌 사본",
@@ -58,6 +61,7 @@ export const koKR: DeepStringRecord<typeof zhCN> = {
     status: {
         videoGenerated: "영상이 생성되었습니다",
         imageGenerated: "이미지가 생성되었습니다",
+        audioGenerated: "오디오가 생성되었습니다",
         imagesPartiallyGenerated: "이미지 {{done}}장 생성, {{failed}}장 실패",
         stopped: "중지됨",
         failed: "생성 실패",
@@ -70,6 +74,7 @@ export const koKR: DeepStringRecord<typeof zhCN> = {
     library: {
         unsupportedKind: "이 유형의 소재는 아직 창작 참고로 사용할 수 없습니다",
         imageOnly: "이미지 창작은 참고 이미지만 지원합니다",
+        audioOnly: "오디오 창작은 참고 오디오만 지원합니다",
         videoModelNoVideo: "현재 영상 모델은 참고 영상을 지원하지 않습니다",
         videoModelNoAudio: "현재 영상 모델은 참고 오디오를 지원하지 않습니다",
         videoModelNoImage: "현재 영상 모델은 참고 이미지를 지원하지 않습니다",
@@ -103,11 +108,13 @@ export const koKR: DeepStringRecord<typeof zhCN> = {
         text: "텍스트",
         image: "이미지",
         video: "영상",
+        audio: "오디오",
     },
     shotScript: {
         text: "창작 메모",
         image: "화면 지시",
         video: "숏 스크립트",
+        audio: "오디오 스크립트",
     },
     ratio: {
         square: "정사각형",
@@ -206,6 +213,8 @@ export const koKR: DeepStringRecord<typeof zhCN> = {
         imagesPartiallyGenerated: "이미지 {{done}}장 생성, {{failed}}장 생성 실패",
         noVideoResult: "작업에서 영상이 반환되지 않았습니다",
         videoResultUnavailable: "영상 결과를 사용할 수 없습니다",
+        noAudioResult: "작업에서 오디오가 반환되지 않았습니다",
+        audioResultUnavailable: "오디오 결과를 사용할 수 없습니다",
         handoffAssetsPending: "일부 생성 소재를 아직 저장하는 중입니다. 잠시 후 캔버스로 이동하세요.",
         handoffSyncPending: "대화가 이 기기에 저장되었습니다. 클라우드 동기화는 아직 완료되지 않았습니다.",
         handoffFailed: "캔버스로 이동하지 못했습니다. 원래 대화는 보존됩니다",
@@ -233,6 +242,7 @@ export const koKR: DeepStringRecord<typeof zhCN> = {
         uploadHintText: "이미지, 영상, 오디오와 일반 문서를 지원하며 미디어는 라이브러리에 저장됩니다",
         uploadHintVideo: "이미지, 영상, 오디오를 지원하며 업로드 후 라이브러리에 저장됩니다",
         uploadHintImage: "이미지를 지원하며 업로드 후 라이브러리에 저장됩니다",
+        uploadHintAudio: "오디오를 지원하며 업로드 후 라이브러리에 저장됩니다",
         uploadHintEagle: "현재 Eagle 폴더에 저장합니다. Eagle은 현재 이미지 파일만 지원합니다",
     },
 };

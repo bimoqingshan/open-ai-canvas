@@ -281,6 +281,8 @@ export const zhCN = {
                 },
             },
             tbd: "待定",
+            chooseProduct: "选择套餐",
+            selectedProduct: "已选套餐",
             startsAt: "{{time}} 开售",
             ended: "已结束",
             soldOut: "已售罄",

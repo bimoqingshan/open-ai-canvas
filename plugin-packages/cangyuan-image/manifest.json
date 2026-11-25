@@ -1,0 +1,301 @@
+{
+  "apiVersion": "yingce.plugin/v2",
+  "id": "cangyuan-image",
+  "name": "沧源图片生成",
+  "version": "1.0.2",
+  "author": "沧源 / 影策",
+  "description": "沧源图片生成异步协议插件，支持文生图、参考图编辑和蒙版功能。",
+  "permissions": [
+    "generation.run",
+    "media.read"
+  ],
+  "configuration": {
+    "fields": [
+      {
+        "name": "apiKey",
+        "type": "secret",
+        "label": "API Key",
+        "required": true
+      }
+    ]
+  },
+  "contributes": {
+    "providers": [
+      {
+        "id": "cangyuan-image",
+        "label": "沧源图片",
+        "capabilities": [
+          "image"
+        ],
+        "scopes": [
+          "admin.system-channel",
+          "user.custom-channel",
+          "canvas",
+          "creation"
+        ],
+        "baseUrl": "https://api.cangyuan.example.com",
+        "requiresPublicMediaUrls": true,
+        "auth": {
+          "type": "bearer",
+          "field": "apiKey"
+        },
+        "imageParameters": [
+          {
+            "name": "size",
+            "label": "画幅比例",
+            "type": "string",
+            "binding": "aspectRatio",
+            "encoding": "ratio",
+            "values": [
+              "1:1",
+              "3:2",
+              "2:3",
+              "4:3",
+              "3:4",
+              "16:9",
+              "21:9",
+              "9:16"
+            ],
+            "default": "1:1"
+          },
+          {
+            "name": "imageResolution",
+            "label": "分辨率档位",
+            "type": "string",
+            "binding": "resolution",
+            "values": [
+              "1k",
+              "2k",
+              "4k"
+            ],
+            "default": "1k",
+            "pricing": true
+          },
+          {
+            "name": "quality",
+            "label": "质量",
+            "type": "string",
+            "binding": "quality",
+            "values": [
+              "medium",
+              "low",
+              "high",
+              "xhigh",
+              "max"
+            ]
+          },
+          {
+            "name": "count",
+            "label": "生成数量",
+            "type": "integer",
+            "binding": "imageCount",
+            "min": 1,
+            "max": 1,
+            "step": 1,
+            "default": 1
+          }
+        ],
+        "parameters": [
+          {
+            "name": "model",
+            "type": "string",
+            "required": true,
+            "mapping": "model",
+            "description": "图片模型 ID"
+          },
+          {
+            "name": "prompt",
+            "type": "string",
+            "required": true,
+            "mapping": "prompt",
+            "description": "图片提示词"
+          },
+          {
+            "name": "images",
+            "type": "media[]",
+            "required": false,
+            "mapping": "provider image/reference fields",
+            "description": "参考图或编辑源图"
+          },
+          {
+            "name": "imageCount",
+            "type": "integer",
+            "required": false,
+            "mapping": "n/sample_count",
+            "description": "输出数量"
+          },
+          {
+            "name": "aspectRatio",
+            "type": "string",
+            "required": false,
+            "mapping": "size/aspect_ratio",
+            "description": "比例或尺寸"
+          },
+          {
+            "name": "resolution",
+            "type": "string",
+            "required": false,
+            "mapping": "resolution/tier",
+            "description": "分辨率档位：web / 1k / 2k / 4k"
+          },
+          {
+            "name": "quality",
+            "type": "string",
+            "required": false,
+            "mapping": "quality",
+            "description": "质量档位"
+          },
+          {
+            "name": "providerOptions",
+            "type": "object",
+            "required": false,
+            "mapping": "provider-specific fields",
+            "description": "厂商扩展字段"
+          }
+        ],
+        "create": {
+          "method": "POST",
+          "pathTemplate": {
+            "$if": {
+              "condition": {
+                "$gt": [
+                  {
+                    "$len": {
+                      "$ref": "request.images"
+                    }
+                  },
+                  0
+                ]
+              },
+              "then": "/v1/images/edits",
+              "else": "/v1/images/generations"
+            }
+          },
+          "contentType": "application/json",
+          "body": {
+            "model": {
+              "$ref": "request.model"
+            },
+            "prompt": {
+              "$ref": "request.prompt"
+            },
+            "async": true,
+            "n": {
+              "$omitEmpty": {
+                "$ref": "request.imageCount"
+              }
+            },
+            "size": {
+              "$omitEmpty": {
+                "$ref": "request.aspectRatio"
+              }
+            },
+            "tier": {
+              "$omitEmpty": {
+                "$ref": "request.resolution"
+              }
+            },
+            "quality": {
+              "$omitEmpty": {
+                "$ref": "request.quality"
+              }
+            },
+            "images": {
+              "$omitEmpty": {
+                "$map": {
+                  "from": {
+                    "$ref": "request.images"
+                  },
+                  "as": "img",
+                  "in": {
+                    "$ref": "img.url"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "poll": {
+          "method": "GET",
+          "pathTemplate": {
+            "$concat": [
+              {
+                "$if": {
+                  "condition": {
+                    "$gt": [
+                      {
+                        "$len": {
+                          "$ref": "request.images"
+                        }
+                      },
+                      0
+                    ]
+                  },
+                  "then": "/v1/images/edits/",
+                  "else": "/v1/images/generations/"
+                }
+              },
+              "{{taskId}}"
+            ]
+          }
+        },
+        "response": {
+          "taskId": {
+            "$coalesce": [
+              {
+                "$ref": "response.id"
+              },
+              {
+                "$ref": "response.task_id"
+              }
+            ]
+          },
+          "status": {
+            "$coalesce": [
+              {
+                "$ref": "response.status"
+              },
+              "pending"
+            ]
+          },
+          "message": {
+            "$ref": "response.error.message"
+          },
+          "images": {
+            "$coalesce": [
+              {
+                "$map": {
+                  "from": {
+                    "$ref": "response.data"
+                  },
+                  "as": "item",
+                  "in": {
+                    "url": {
+                      "$omitEmpty": {
+                        "$ref": "item.url"
+                      }
+                    },
+                    "b64_json": {
+                      "$omitEmpty": {
+                        "$ref": "item.b64_json"
+                      }
+                    }
+                  }
+                }
+              },
+              []
+            ]
+          },
+          "errorPaths": [
+            "error",
+            "error.type"
+          ],
+          "messagePaths": [
+            "error.message"
+          ]
+        }
+      }
+    ]
+  },
+  "documentation": "# 沧源图片生成插件\n\n沧源（Cangyuan）图片生成协议插件，支持异步文生图、参考图编辑和蒙版功能。\n\n## 特性\n\n- ✅ 异步文生图（`POST /v1/images/generations`）\n- ✅ 参考图编辑（`POST /v1/images/edits`）\n- ✅ 异步轮询查询（`GET /v1/images/generations/{task_id}`）\n- ✅ 最多 9 张参考图\n- ✅ 蒙版支持\n- ✅ 画幅比例选择（1:1、3:2、2:3、4:3、3:4、16:9、21:9、9:16）\n- ✅ 多档位选择（1K / 2K / 4K）\n- ✅ 自动尺寸选项已移除，默认使用 1:1 画幅和 1K 档位\n\n## 配置说明\n\n1. **API Key**: 从沧源平台获取\n2. **Base URL**: 配置沧源 API 地址\n\n## 支持的参数\n\n| 参数 | 类型 | 说明 |\n|------|------|------|\n| `model` | string | 固定传 `gpt-image-2-x` |\n| `prompt` | string | 生成内容的描述 |\n| `n` | integer | 生成张数（1-1） |\n| `size` | string | 画幅比例：1:1、3:2、2:3、4:3、3:4、16:9、21:9、9:16 |\n| `quality` | string | 输出质量：medium/low/high/xhigh/max |\n| `tier` | string | 档位：1k/2k/4k，插件默认 1k |\n| `images` | array | 参考图 URL 数组（最多 9 张） |\n| `mask` | string | 蒙版 URL |\n| `async` | boolean | 异步模式（固定为 true） |\n\n## 档位说明\n\n- **1k**: 1K 分辨率\n- **2k**: 2K 分辨率（默认 ¥0.07/次）\n- **4k**: 4K 高清档位\n\n## 使用注意\n\n- 默认使用异步模式\n- 不同档位的费用由系统实时价格决定\n- 插件界面默认发送 `1k`\n- 参考图和蒙版必须是公网可访问的 HTTPS URL\n\n---\n\n# 沧元内置协议：用户提供的 no-auto 版本\n\n内置包以 `cangyuan-image-v3-no-auto.yingce-plugin` 为基础，补充完整接口文档并按参考图请求路由到编辑端点。当前包版本为 1.0.2，其余参数、权限和配置保持原样。\n\n- 插件 ID：`cangyuan-image`；包内版本：`1.0.2`（文件名 v3 不代表清单版本）。\n- Provider ID：`cangyuan-image`，替代旧的 `cangyuan-image-generation` 与 `cangyuan-image-edits`。\n- 原包 SHA-256：`65cbc56f0f610022a4ac436e82ed7af528425a8b3bee097d831956cfea2f3e97`。\n- 创建：无参考图时 `POST /v1/images/generations`，带参考图时 `POST /v1/images/edits`；固定 `async: true`，参考图映射为 `images` URL 数组。\n- 轮询：按创建阶段使用 `GET /v1/images/generations/{taskId}` 或 `GET /v1/images/edits/{taskId}`；响应提取 `id` / `task_id`、`status`、`data[].url` / `data[].b64_json`。\n- 比例无 auto 选项，默认 `1:1`；分辨率提供 `1k` / `2k` / `4k`，默认 `1k`；数量固定为 1。\n- `apiKey` 使用 Bearer 鉴权；包内 baseUrl 是 example.com 占位地址，实际渠道必须配置真实上游地址。\n- 参考图是否进入编辑路由由 `request.images` 是否非空判定；原 README 提及蒙版，但当前清单未映射 `mask`，也没有 agent scope。\n\n## 文档补充与原包保留\n\n原包只包含 `manifest.json` 和 `README.md`，没有内嵌 documentation 或 `docs/interface.md`。原始 ZIP 保存在 `backend/internal/app/testdata/cangyuan-image-original/`，仅作为回归样本，不进入官方插件目录。\n\n发布包通过仓库现有 `embed-documentation.mjs cangyuan-image` 生成 `documentation` 和本文件的完整清单合同，再仅打包此插件。发布包哈希因此变化，原 README 字节保持不变，以本文件及完整清单澄清其接口范围。回归测试固定原件哈希，并逐字段比较去除顶层 `documentation` 后的清单，确保没有修改运行协议；同时验证发布包与源文件一致。官方完整文档测试保持不变。\n\n<!-- YINGCE_MANIFEST_CONTRACT_START -->\n## Manifest 完整接口定义\n\n以下 JSON 与插件包内实际 `manifest.json` 逐字段一致，覆盖插件身份、权限、配置、鉴权、参数、校验、创建、Agent、查询、取消、结果下载、响应和 Agent 响应映射。`documentation` 字段的值就是当前完整文档；为避免文档在自身内部无限递归，JSON 中仅用等义占位文本表示正文。\n\n```json\n{\n  \"apiVersion\": \"yingce.plugin/v2\",\n  \"id\": \"cangyuan-image\",\n  \"name\": \"沧源图片生成\",\n  \"version\": \"1.0.2\",\n  \"author\": \"沧源 / 影策\",\n  \"description\": \"沧源图片生成异步协议插件，支持文生图、参考图编辑和蒙版功能。\",\n  \"permissions\": [\n    \"generation.run\",\n    \"media.read\"\n  ],\n  \"configuration\": {\n    \"fields\": [\n      {\n        \"name\": \"apiKey\",\n        \"type\": \"secret\",\n        \"label\": \"API Key\",\n        \"required\": true\n      }\n    ]\n  },\n  \"contributes\": {\n    \"providers\": [\n      {\n        \"id\": \"cangyuan-image\",\n        \"label\": \"沧源图片\",\n        \"capabilities\": [\n          \"image\"\n        ],\n        \"scopes\": [\n          \"admin.system-channel\",\n          \"user.custom-channel\",\n          \"canvas\",\n          \"creation\"\n        ],\n        \"baseUrl\": \"https://api.cangyuan.example.com\",\n        \"requiresPublicMediaUrls\": true,\n        \"auth\": {\n          \"type\": \"bearer\",\n          \"field\": \"apiKey\"\n        },\n        \"imageParameters\": [\n          {\n            \"name\": \"size\",\n            \"label\": \"画幅比例\",\n            \"type\": \"string\",\n            \"binding\": \"aspectRatio\",\n            \"encoding\": \"ratio\",\n            \"values\": [\n              \"1:1\",\n              \"3:2\",\n              \"2:3\",\n              \"4:3\",\n              \"3:4\",\n              \"16:9\",\n              \"21:9\",\n              \"9:16\"\n            ],\n            \"default\": \"1:1\"\n          },\n          {\n            \"name\": \"imageResolution\",\n            \"label\": \"分辨率档位\",\n            \"type\": \"string\",\n            \"binding\": \"resolution\",\n            \"values\": [\n              \"1k\",\n              \"2k\",\n              \"4k\"\n            ],\n            \"default\": \"1k\",\n            \"pricing\": true\n          },\n          {\n            \"name\": \"quality\",\n            \"label\": \"质量\",\n            \"type\": \"string\",\n            \"binding\": \"quality\",\n            \"values\": [\n              \"medium\",\n              \"low\",\n              \"high\",\n              \"xhigh\",\n              \"max\"\n            ]\n          },\n          {\n            \"name\": \"count\",\n            \"label\": \"生成数量\",\n            \"type\": \"integer\",\n            \"binding\": \"imageCount\",\n            \"min\": 1,\n            \"max\": 1,\n            \"step\": 1,\n            \"default\": 1\n          }\n        ],\n        \"parameters\": [\n          {\n            \"name\": \"model\",\n            \"type\": \"string\",\n            \"required\": true,\n            \"mapping\": \"model\",\n            \"description\": \"图片模型 ID\"\n          },\n          {\n            \"name\": \"prompt\",\n            \"type\": \"string\",\n            \"required\": true,\n            \"mapping\": \"prompt\",\n            \"description\": \"图片提示词\"\n          },\n          {\n            \"name\": \"images\",\n            \"type\": \"media[]\",\n            \"required\": false,\n            \"mapping\": \"provider image/reference fields\",\n            \"description\": \"参考图或编辑源图\"\n          },\n          {\n            \"name\": \"imageCount\",\n            \"type\": \"integer\",\n            \"required\": false,\n            \"mapping\": \"n/sample_count\",\n            \"description\": \"输出数量\"\n          },\n          {\n            \"name\": \"aspectRatio\",\n            \"type\": \"string\",\n            \"required\": false,\n            \"mapping\": \"size/aspect_ratio\",\n            \"description\": \"比例或尺寸\"\n          },\n          {\n            \"name\": \"resolution\",\n            \"type\": \"string\",\n            \"required\": false,\n            \"mapping\": \"resolution/tier\",\n            \"description\": \"分辨率档位：web / 1k / 2k / 4k\"\n          },\n          {\n            \"name\": \"quality\",\n            \"type\": \"string\",\n            \"required\": false,\n            \"mapping\": \"quality\",\n            \"description\": \"质量档位\"\n          },\n          {\n            \"name\": \"providerOptions\",\n            \"type\": \"object\",\n            \"required\": false,\n            \"mapping\": \"provider-specific fields\",\n            \"description\": \"厂商扩展字段\"\n          }\n        ],\n        \"create\": {\n          \"method\": \"POST\",\n          \"pathTemplate\": {\n            \"$if\": {\n              \"condition\": {\n                \"$gt\": [\n                  {\n                    \"$len\": {\n                      \"$ref\": \"request.images\"\n                    }\n                  },\n                  0\n                ]\n              },\n              \"then\": \"/v1/images/edits\",\n              \"else\": \"/v1/images/generations\"\n            }\n          },\n          \"contentType\": \"application/json\",\n          \"body\": {\n            \"model\": {\n              \"$ref\": \"request.model\"\n            },\n            \"prompt\": {\n              \"$ref\": \"request.prompt\"\n            },\n            \"async\": true,\n            \"n\": {\n              \"$omitEmpty\": {\n                \"$ref\": \"request.imageCount\"\n              }\n            },\n            \"size\": {\n              \"$omitEmpty\": {\n                \"$ref\": \"request.aspectRatio\"\n              }\n            },\n            \"tier\": {\n              \"$omitEmpty\": {\n                \"$ref\": \"request.resolution\"\n              }\n            },\n            \"quality\": {\n              \"$omitEmpty\": {\n                \"$ref\": \"request.quality\"\n              }\n            },\n            \"images\": {\n              \"$omitEmpty\": {\n                \"$map\": {\n                  \"from\": {\n                    \"$ref\": \"request.images\"\n                  },\n                  \"as\": \"img\",\n                  \"in\": {\n                    \"$ref\": \"img.url\"\n                  }\n                }\n              }\n            }\n          }\n        },\n        \"poll\": {\n          \"method\": \"GET\",\n          \"pathTemplate\": {\n            \"$concat\": [\n              {\n                \"$if\": {\n                  \"condition\": {\n                    \"$gt\": [\n                      {\n                        \"$len\": {\n                          \"$ref\": \"request.images\"\n                        }\n                      },\n                      0\n                    ]\n                  },\n                  \"then\": \"/v1/images/edits/\",\n                  \"else\": \"/v1/images/generations/\"\n                }\n              },\n              \"{{taskId}}\"\n            ]\n          }\n        },\n        \"response\": {\n          \"taskId\": {\n            \"$coalesce\": [\n              {\n                \"$ref\": \"response.id\"\n              },\n              {\n                \"$ref\": \"response.task_id\"\n              }\n            ]\n          },\n          \"status\": {\n            \"$coalesce\": [\n              {\n                \"$ref\": \"response.status\"\n              },\n              \"pending\"\n            ]\n          },\n          \"message\": {\n            \"$ref\": \"response.error.message\"\n          },\n          \"images\": {\n            \"$coalesce\": [\n              {\n                \"$map\": {\n                  \"from\": {\n                    \"$ref\": \"response.data\"\n                  },\n                  \"as\": \"item\",\n                  \"in\": {\n                    \"url\": {\n                      \"$omitEmpty\": {\n                        \"$ref\": \"item.url\"\n                      }\n                    },\n                    \"b64_json\": {\n                      \"$omitEmpty\": {\n                        \"$ref\": \"item.b64_json\"\n                      }\n                    }\n                  }\n                }\n              },\n              []\n            ]\n          },\n          \"errorPaths\": [\n            \"error\",\n            \"error.type\"\n          ],\n          \"messagePaths\": [\n            \"error.message\"\n          ]\n        }\n      }\n    ]\n  },\n  \"documentation\": \"<当前插件的完整 documentation，由 README.md 与 docs/interface.md 拼接而成；为避免 JSON 递归，此处不重复展开正文。>\"\n}\n```\n<!-- YINGCE_MANIFEST_CONTRACT_END -->\n"
+}

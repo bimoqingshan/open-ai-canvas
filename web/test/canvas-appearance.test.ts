@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { setActiveUserScope } from "../src/lib/user-scope";
 import {
     CANVAS_APPEARANCE_PRESETS,
+    NEW_CANVAS_BACKGROUND_MODE,
     canvasAppearanceForPreset,
     canvasAppearanceForTheme,
     canvasAppearanceValues,
@@ -39,6 +40,10 @@ afterEach(() => {
 });
 
 describe("canvas appearance persistence and presets", () => {
+    test("uses a dotted background for new canvases by default", () => {
+        expect(NEW_CANVAS_BACKGROUND_MODE).toBe("dots");
+    });
+
     const custom = {
         mode: "custom" as const,
         custom: { baseTheme: "light" as const, backgroundColor: "#DFE9E6", backgroundBrightness: -3, gridColor: "#345678", gridOpacity: 27 },

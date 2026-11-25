@@ -5,6 +5,7 @@ import {
     audioFormatOptionsForConfig,
     audioSpeedLabel,
     audioVoiceOptionsForConfig,
+    isCangyuanMusicPromptConfig,
     isDoubaoAudioConfig,
     isEvoLinkSeedAudioConfig,
     isEvoLinkQwenAudioConfig,
@@ -34,6 +35,7 @@ type AudioSettingsPanelProps = {
 export function AudioSettingsPanel({ config, referenceAudioLabels, references = [], onBindingsChange, onConfigChange, theme, showTitle = true, className = "w-[var(--panel-width-compact)] space-y-4" }: AudioSettingsPanelProps) {
     const listId = useId();
     const doubao = isDoubaoAudioConfig(config);
+    const cangyuan = isCangyuanMusicPromptConfig(config);
     const evoLinkSeed = isEvoLinkSeedAudioConfig(config);
     const qwenAudio = isEvoLinkQwenAudioConfig(config);
     const miniMax = isMiniMaxSpeechConfig(config);
@@ -60,6 +62,24 @@ export function AudioSettingsPanel({ config, referenceAudioLabels, references = 
                         { label: "配音", value: "unified_edit" },
                     ]}
                 />
+                {cangyuan ? (
+                    <fieldset>
+                        <legend className="mb-2 text-xs" style={{ color: theme.node.muted }}>
+                            人声
+                        </legend>
+                        <Radio.Group
+                            aria-label="纯音乐或含人声"
+                            value={config.audioInstrumental || ""}
+                            onChange={(event) => onConfigChange("instrumental", event.target.value)}
+                            options={[
+                                { value: "", label: "默认" },
+                                { value: "true", label: "纯音乐" },
+                                { value: "false", label: "含人声" },
+                            ]}
+                            className="flex flex-wrap gap-2"
+                        />
+                    </fieldset>
+                ) : null}
                 {referenceVoice && characterReferences.length && onBindingsChange ? (
                     <fieldset className="space-y-2">
                         <legend className="text-xs" style={{ color: theme.node.muted }}>
@@ -93,47 +113,49 @@ export function AudioSettingsPanel({ config, referenceAudioLabels, references = 
                         })}
                     </fieldset>
                 ) : null}
-                <fieldset className="space-y-2">
-                    <legend className="mb-2 text-xs" style={{ color: theme.node.muted }}>
-                        音色
-                    </legend>
-                    {referenceVoice ? (
-                        <p className="text-xs leading-5" style={{ color: theme.node.muted }}>
-                            当前使用参考音色：{referenceAudioLabels!.join("、")}。可用 @音频编号或上方角色对应指定音色；本次不使用音色 ID。
-                        </p>
-                    ) : evoLinkSeed ? (
-                        <p className="text-xs leading-5" style={{ color: theme.node.muted }}>
-                            可连接最多 3 段参考音频；不连接时按提示词生成。参考音频将随本次任务发送给 EvoLink，不创建永久音色 ID。
-                        </p>
-                    ) : doubao ? (
-                        <>
+                {!cangyuan ? (
+                    <fieldset className="space-y-2">
+                        <legend className="mb-2 text-xs" style={{ color: theme.node.muted }}>
+                            音色
+                        </legend>
+                        {referenceVoice ? (
                             <p className="text-xs leading-5" style={{ color: theme.node.muted }}>
-                                无参考素材时按提示词生成；可连接最多 3 段音频或 1 张图片，图片与音频不能混用。
+                                当前使用参考音色：{referenceAudioLabels!.join("、")}。可用 @音频编号或上方角色对应指定音色；本次不使用音色 ID。
                             </p>
-                            <Input aria-label="豆包音色 ID" value={voice} allowClear placeholder="留空按提示词生成，或输入可用的音色 ID" onChange={(event) => selectVoice(event.target.value.trim())} />
-                            {referenceAudioLabels !== undefined ? (
+                        ) : evoLinkSeed ? (
+                            <p className="text-xs leading-5" style={{ color: theme.node.muted }}>
+                                可连接最多 3 段参考音频；不连接时按提示词生成。参考音频将随本次任务发送给 EvoLink，不创建永久音色 ID。
+                            </p>
+                        ) : doubao ? (
+                            <>
                                 <p className="text-xs leading-5" style={{ color: theme.node.muted }}>
-                                    {config.audioMode === "unified_edit" ? "请连接参考音频后生成配音。" : "文本朗读使用所选音色；已连接的参考音频不参与本次生成。"}
+                                    无参考素材时按提示词生成；可连接最多 3 段音频或 1 张图片，图片与音频不能混用。
                                 </p>
-                            ) : null}
-                            <p className="text-xs leading-5" style={{ color: theme.node.muted }}>
-                                仅填写当前模型已开通的音色或复刻音色 ID；不自动套用旧版音色列表。图片参考模式不使用此音色。
-                            </p>
-                        </>
-                    ) : (
-                        <>
-                            <Input aria-label="渠道音色 ID" value={qwenAudio ? voice : config.audioVoice || ""} list={listId} placeholder="输入渠道音色 ID" onChange={(event) => selectVoice(event.target.value)} />
-                            <datalist id={listId}>
-                                {currentVoice.map((item) => (
-                                    <option value={item.value} key={item.value}>
-                                        {item.label}
-                                    </option>
-                                ))}
-                            </datalist>
-                            <Radio.Group aria-label="常用音色" value={voice} onChange={(event) => selectVoice(event.target.value)} options={currentVoice} className="flex flex-wrap gap-2" />
-                        </>
-                    )}
-                </fieldset>
+                                <Input aria-label="豆包音色 ID" value={voice} allowClear placeholder="留空按提示词生成，或输入可用的音色 ID" onChange={(event) => selectVoice(event.target.value.trim())} />
+                                {referenceAudioLabels !== undefined ? (
+                                    <p className="text-xs leading-5" style={{ color: theme.node.muted }}>
+                                        {config.audioMode === "unified_edit" ? "请连接参考音频后生成配音。" : "文本朗读使用所选音色；已连接的参考音频不参与本次生成。"}
+                                    </p>
+                                ) : null}
+                                <p className="text-xs leading-5" style={{ color: theme.node.muted }}>
+                                    仅填写当前模型已开通的音色或复刻音色 ID；不自动套用旧版音色列表。图片参考模式不使用此音色。
+                                </p>
+                            </>
+                        ) : (
+                            <>
+                                <Input aria-label="渠道音色 ID" value={qwenAudio ? voice : config.audioVoice || ""} list={listId} placeholder="输入渠道音色 ID" onChange={(event) => selectVoice(event.target.value)} />
+                                <datalist id={listId}>
+                                    {currentVoice.map((item) => (
+                                        <option value={item.value} key={item.value}>
+                                            {item.label}
+                                        </option>
+                                    ))}
+                                </datalist>
+                                <Radio.Group aria-label="常用音色" value={voice} onChange={(event) => selectVoice(event.target.value)} options={currentVoice} className="flex flex-wrap gap-2" />
+                            </>
+                        )}
+                    </fieldset>
+                ) : null}
                 <fieldset>
                     <legend className="mb-2 text-xs" style={{ color: theme.node.muted }}>
                         音频格式

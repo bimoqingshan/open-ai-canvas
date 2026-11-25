@@ -45,7 +45,7 @@ export const frFR: DeepStringRecord<typeof zhCN> = {
         title: "Ajouter un nœud",
         nodesGroup: "Nœuds de création",
         commandWithBadge: "{{label}} ({{badge}})",
-        footerGroup: "Workflows et importations",
+        resourceGroup: "Importer des ressources",
     },
     audioPlayer: {
         defaultTitle: "Audio",

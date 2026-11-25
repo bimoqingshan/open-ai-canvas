@@ -9,7 +9,7 @@ description: 信封、错误码与 OpenAPI
 
 以下接口均在 `/api` 下，使用登录 Cookie。`teamId`、`membershipId`、素材 ID 只用于定位；操作权限由服务端根据当前账号及其有效成员关系决定。成员不能访问其他团队或冒用所有者，待处理邀请不授予读取权限。
 
-`GET /features` 返回 `data.features.teamsEnabled`，默认 `false`。平台管理员通过 `PATCH /admin/settings/features` 提交 `{ "teamsEnabled": true }` 开启。关闭时所有团队接口（含邀请、媒体、划转和生成）对已登录账号返回 403 `team_feature_disabled`，存量数据保留。团队开启且 `creditsEnabled` 关闭时仍可邀请、共享和编辑画布，积分接口与收费生成暂停。
+`GET /features` 返回完整的 `data.features`；`assetsEnabled` 默认 `true`，平台管理员可通过 `PATCH /admin/settings/features` 提交 `{ "assetsEnabled": false }` 隐藏资产库入口并关闭资产库页面访问。已有素材保留，其他功能引用素材不受影响。`teamsEnabled` 默认 `false`，管理员可提交 `{ "teamsEnabled": true }` 开启；关闭时所有团队接口（含邀请、媒体、划转和生成）对已登录账号返回 403 `team_feature_disabled`，存量数据保留。团队开启且 `creditsEnabled` 关闭时仍可邀请、共享和编辑画布，积分接口与收费生成暂停。
 
 | 操作 | 路径与结果 |
 | --- | --- |
@@ -21,7 +21,7 @@ description: 信封、错误码与 OpenAPI
 | 跨空间发布 | `POST /teams/:teamId/asset-publications` 接受 `assetIds`（每批最多 20 项）和 `idempotencyKey`。逐项读取 `data.results`，整批 HTTP 200 不代表全部发布成功。 |
 | 素材和媒体 | 在 `/teams/:teamId/workspace` 下使用现有 `/assets`、`/asset-folders`、`/resources` 和分片上传接口。`GET/HEAD /resources/:id/file` 逐请求鉴权，支持 `Range`。贡献者和所有者可归档；只有所有者能清理已归档且未被使用的素材。 |
 | 自由画布 | 在同一前缀下使用 `/canvas-projects`、`/:id/operations`、`/:id/sync-status`、`/:id/edit-lease` 和 `/:id/realtime`。创建和更新均使用自由画布的 operations 合同，不另设整张画布锁。 |
-| 创作和任务 | 在同一前缀下使用 `/creation-conversations`、`/tasks` 和 `GET /tasks/:id/text-events`。先 `POST /tasks/quote` 计算 `maxChargeMicrocredits`，再 `POST /tasks` 提交原参数、确认上限和 `idempotencyKey`。仅接受系统文本模型；超过确认上限返回 409，不创建订单。产物属于当前团队，订单支付方是发起成员的团队额度。 |
+| 创作和任务 | 在同一前缀下使用 `/creation-conversations`、`/tasks` 和 `GET /tasks/:id/text-events`。先 `POST /tasks/quote` 计算 `maxChargeMicrocredits`，再 `POST /tasks` 提交原参数、确认上限和 `idempotencyKey`。接受系统文本、图片、视频和音频模型；音频参考仅用于音频任务。自定义渠道、工作流和 Agent 暂不开放。超过确认上限返回 409，不创建订单。产物属于当前团队，订单支付方是发起成员的团队额度；文本支持固定/Token 计费，图片支持固定/图片用量计费，视频和音频支持固定/按秒计费，音频另支持 Token 计费。 |
 
 权限、资金及引用冲突应读信封 `reason`，例如 `team_owner_required`、`team_invitation_expired`、`team_credits_insufficient` 和 `team_asset_referenced`。请求规范见 `GET /api/openapi.yaml`。
 
@@ -308,6 +308,7 @@ Agent 通过 `mcp_list_tools` 分三步读取连接目录、指定连接的工�
 | 路径 | 入参与结果 |
 | --- | --- |
 | `GET /auth/profile` | 返回 `user`、`hasPassword`、`emailEnabled`、`linuxdoEnabled` 和可选 `reauthenticatedUntil`；密码散列、头像图片正文、内部缓存版本均不在用户 JSON 中 |
+| `GET /auth/profile/activity` | 返回当前用户近 365 个 UTC 自然日的逐日消费与活跃记录，以及总消耗、单日峰值、近七日消耗、活跃天数和最长连续活跃天数 |
 | `PUT /auth/profile/avatar` | multipart `file`，只接受真实 PNG/JPEG、最大 5 MiB；返回 `{ user }`，包含带版本的头像地址 |
 | `DELETE /auth/profile/avatar` | 清除个人头像并明确选择系统默认头像；第三方重新登录不会覆盖该选择；返回 `{ user }` |
 | `POST /auth/profile/avatar/default` | `{ preset }`，只接受 `person/director/camera/cat/rabbit/robot/rocket/sparkles`；保存选择并清除个人图片，返回 `{ user }` |

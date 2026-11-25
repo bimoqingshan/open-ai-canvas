@@ -1,7 +1,7 @@
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button, Input } from "antd";
-import { AlertCircle, ArrowUpRight, Box, Check, ChevronDown, Clapperboard, Image, MapPin, Search, UsersRound, ZoomIn } from "lucide-react";
+import { AlertCircle, ArrowRight, Box, Check, ChevronDown, Clapperboard, Image, MapPin, Search, UsersRound, ZoomIn } from "lucide-react";
 
 import { CanvasImagePreview } from "@/components/canvas/canvas-image-preview";
 import { WorkspaceErrorState, WorkspaceLoadingState, WorkspaceNoResultsState, WorkspaceState } from "@/components/layout/workspace-state";
@@ -37,7 +37,7 @@ function AuditAsset({ asset, onOpenCast, onPreview }: { asset: DramaAssetUsage; 
             <div className="drama-audit-asset-body">
                 <div className="drama-audit-asset-title">
                     <strong title={asset.name}>{asset.name}</strong>
-                    {asset.castId ? <Button type="text" size="small" icon={<ArrowUpRight className="size-3.5" />} aria-label={`打开${asset.name}的资产设定`} onClick={() => onOpenCast(asset.castId!)} /> : null}
+                    {asset.castId ? <Button type="text" size="small" icon={<ArrowRight className="size-3.5" />} aria-label={`打开${asset.name}的资产设定`} onClick={() => onOpenCast(asset.castId!)} /> : null}
                 </div>
                 <span className="drama-audit-asset-meta">
                     <span className="drama-asset-kind" data-asset-kind={asset.kind}>
@@ -203,7 +203,7 @@ export function ProjectAssetAudit({ projectId, episodes, cast, activeEpisodeId, 
                                             {issueCount ? ` · ${issueCount} 项待核查` : ""}
                                         </span>
                                     </div>
-                                    <Button icon={<ArrowUpRight className="size-4" />} onClick={() => onOpenSegment(episodeId, segment.index)}>
+                                    <Button icon={<ArrowRight className="size-4" />} onClick={() => onOpenSegment(episodeId, segment.index)}>
                                         进入剧情段
                                     </Button>
                                 </header>

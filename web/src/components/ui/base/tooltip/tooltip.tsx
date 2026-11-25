@@ -34,10 +34,11 @@ export interface TooltipProps {
     /** 首次悬停延迟 ms（默认 500）。RAC 在一个提示刚关闭后的短窗口内切换相邻提示不再等待。 */
     delay?: number;
     className?: string;
+    triggerClassName?: string;
     children: ReactNode;
 }
 
-export function Tooltip({ title, placement = "top", delay = 500, className, children }: TooltipProps) {
+export function Tooltip({ title, placement = "top", delay = 500, className, triggerClassName, children }: TooltipProps) {
     // Hook 必须在提前返回之前调用：title 由空变为非空时，Hook 数量不能变化。
     const triggerRef = useRef<HTMLSpanElement>(null);
     if (!title) return <>{children}</>;
@@ -53,7 +54,7 @@ export function Tooltip({ title, placement = "top", delay = 500, className, chil
              * 这里给外层 span 绑定稳定的 triggerRef 并直接透传给 RACTooltip，
              * 确保气泡定位始终锚定在控件正上方，绝不飞至屏幕左上角。
              */}
-            <span ref={triggerRef} className="inline-flex">
+            <span ref={triggerRef} className={cn("inline-flex", triggerClassName)}>
                 {directTrigger ? (
                     <Focusable>{child as ComponentProps<typeof Focusable>["children"]}</Focusable>
                 ) : (

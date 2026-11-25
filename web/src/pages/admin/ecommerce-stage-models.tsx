@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Alert, App, Button, Select, Typography } from "antd";
-import { ArrowUpRight, RefreshCw, X } from "lucide-react";
+import { ArrowRight, RefreshCw, X } from "lucide-react";
 import { useNavigate } from "react-router";
 import { ModelPicker } from "@/components/model-picker";
 import { getModelCatalog } from "@/services/api/logical-models";
@@ -141,7 +141,7 @@ export function EcommerceStageModels({ embedded = false, onSaved }: { embedded?:
                     message="还没有能读商品图的文本模型"
                     description="到「渠道管理」打开一个支持看图的文本模型，在「能力与参数 → 引用与限制」里把「最多识别图片数」设为 1 以上并保存，回到这里点「刷新模型」即可选择。"
                     action={
-                        <Button size="small" icon={<ArrowUpRight size={14} />} iconPlacement="end" onClick={() => navigate("/admin/channels")}>
+                        <Button size="small" icon={<ArrowRight size={14} />} iconPlacement="end" onClick={() => navigate("/admin/channels")}>
                             去渠道管理
                         </Button>
                     }

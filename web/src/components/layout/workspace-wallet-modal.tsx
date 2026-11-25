@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { App, Button, Input, Skeleton } from "antd";
-import { ChevronLeft, ChevronRight, CircleAlert, Coins, CreditCard, HardDrive, History, RefreshCw, TicketCheck, WalletCards } from "lucide-react";
+import { ChevronLeft, ChevronRight, CircleAlert, CircleUserRound, Coins, History, RefreshCw, TicketCheck } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
@@ -10,9 +10,10 @@ import { WalletHistoryRow } from "@/components/layout/workspace-wallet-history-r
 import { usePaymentOrderFlow } from "@/components/payment/use-payment-order-flow";
 import { PaymentOrdersPanel, paymentOrdersQueryKey } from "@/components/payment/payment-orders-panel";
 import { AppModal } from "@/components/ui/product/app-modal";
+import { UserAvatar } from "@/components/layout/user-avatar";
 import { formatCredits } from "@/constant/credits";
 import { useAccountFileStorageUsage } from "@/hooks/use-account-file-storage-usage";
-import { accountFileStorageUsageQueryKey, accountStorageMeter } from "@/lib/account-storage-usage";
+import { accountFileStorageUsageQueryKey } from "@/lib/account-storage-usage";
 import { estimatePaymentCharge, paymentOptionsFromProviders, type PaymentOption } from "@/lib/payment-options";
 import { getPaymentSettings, listPaymentProviders, listTopupProducts, type PaymentOrder, type TopupProduct, type TopupProductKind } from "@/services/api/payments";
 import { listMyStorageGrants } from "@/services/api/storage-grants";
@@ -111,10 +112,10 @@ export function WorkspaceWalletModal({
     const [selectedOptionKey, setSelectedOptionKey] = useState("");
     const [code, setCode] = useState("");
     const [redeeming, setRedeeming] = useState(false);
+    const [redeemOpen, setRedeemOpen] = useState(false);
     const requestSequence = useRef(0);
     const storageQuery = useAccountFileStorageUsage(open);
     const grantsQuery = useQuery({ queryKey: storageGrantsQueryKey, queryFn: listMyStorageGrants, enabled: open });
-    const storageMeter = accountStorageMeter(storageQuery.data);
 
     const selectedProduct = useMemo(() => products.find((item) => item.id === selectedProductId), [products, selectedProductId]);
     const selectedOption = useMemo(() => paymentOptions.find((item) => item.key === selectedOptionKey), [paymentOptions, selectedOptionKey]);
@@ -146,7 +147,8 @@ export function WorkspaceWalletModal({
 
     useEffect(() => {
         if (!open) return;
-        setTab(initialTab || "topup");
+        setTab(initialTab === "redeem" ? "topup" : initialTab || "topup");
+        setRedeemOpen(initialTab === "redeem");
         setFocusKind(initialCategory && initialCategory !== "all" ? initialCategory : undefined);
         setPage(1);
         void reloadWallet(1, initialTab === "income" ? "income" : "expenses");
@@ -171,6 +173,10 @@ export function WorkspaceWalletModal({
     }, [open]);
 
     useEffect(() => {
+        if (!open) setRedeemOpen(false);
+    }, [open]);
+
+    useEffect(() => {
         if (!open || !paymentInvalid) return;
         message.error(t("account.wallet.paymentInvalid"));
     }, [open, paymentInvalid]);
@@ -190,6 +196,8 @@ export function WorkspaceWalletModal({
     };
 
     const payment = usePaymentOrderFlow({ onGranted: announceGranted });
+    const user = useUserStore((state) => state.user);
+    const userGroup = useUserStore((state) => state.userGroup);
 
     useEffect(() => {
         if (payment.order) void queryClient.invalidateQueries({ queryKey: paymentOrdersQueryKey });
@@ -225,6 +233,7 @@ export function WorkspaceWalletModal({
             setCode("");
             await announceWalletUpdated();
             message.success(t("account.wallet.redeemSuccess"));
+            setRedeemOpen(false);
         } catch (error) {
             message.error(error instanceof Error ? error.message : t("account.wallet.redeemFailed"));
         } finally {
@@ -244,87 +253,46 @@ export function WorkspaceWalletModal({
         await payment.start(selectedProduct.id, selectedOption.providerId, selectedOption.method);
     };
 
-    // 定位到某类套餐：滚动到分组，并在当前选中项不属于该类时改选该类第一个可买套餐。
-    const focusProducts = (kind: TopupProductKind) => {
-        setTab("topup");
-        setFocusKind(kind);
-        setFocusToken((value) => value + 1);
-        if (selectedProduct?.kind === kind) return;
-        const next = products.find((item) => item.kind === kind && item.canPurchase);
-        if (next) setSelectedProductId(next.id);
-    };
-
-    const available = wallet?.account.availableMicrocredits ?? 0;
     const totalPages = Math.max(1, Math.ceil((historyWallet?.total || 0) / 20));
 
     return (
         <>
-            <AppModal flush open={open} title={null} footer={null} centered width="min(920px, calc(100vw - 28px))" onCancel={onClose} rootClassName="workspace-wallet-modal">
+            <AppModal flush open={open} title={null} footer={null} centered width="100vw" onCancel={onClose} rootClassName="workspace-wallet-modal is-topup">
                 <div className="workspace-wallet-shell">
-                    <header className="workspace-wallet-header">
-                        <div>
-                            <span className="workspace-wallet-kicker">
-                                <Coins />
-                                {creditsEnabled ? t("nav.tools.wallet") : t("account.wallet.topupCenter")}
-                            </span>
-                            <h2>{creditsEnabled ? t("account.wallet.title") : t("account.wallet.titleStorage")}</h2>
-                            <p>{creditsEnabled ? t("account.wallet.description") : t("account.wallet.descriptionStorage")}</p>
-                        </div>
-                        <div className="workspace-wallet-stats">
+                    <header className="workspace-wallet-header is-topup">
+                        <div className="wallet-topup-identity">
+                            <span className="wallet-topup-avatar">{user ? <UserAvatar user={user} /> : <CircleUserRound aria-hidden="true" />}</span>
+                            <strong>{user?.displayName || user?.username || t("account.wallet.topupCenter")}</strong>
+                            <span className="wallet-topup-plan">{userGroup?.name || (user?.role === "admin" ? t("shell.account.admin") : t("shell.account.creator"))}</span>
                             {creditsEnabled ? (
-                                <div className="workspace-wallet-balance">
+                                <span className="wallet-topup-balance">
                                     <span>{t("shell.account.availableCredits")}</span>
-                                    <strong>{wallet ? formatCredits(available, 6) : "--"}</strong>
-                                    <small>{t("account.wallet.reserved", { amount: wallet ? formatCredits(wallet.account.reservedMicrocredits, 6) : "--" })}</small>
-                                </div>
+                                    <b>{wallet ? formatCredits(wallet.account.availableMicrocredits, 6) : "--"}</b>
+                                </span>
                             ) : null}
-                            <button type="button" className="workspace-wallet-balance is-storage" aria-label={t("account.wallet.viewStorage")} onClick={() => focusProducts("storage")}>
-                                <span>
-                                    <HardDrive className="inline size-3 align-[-1px]" aria-hidden="true" /> {t("account.wallet.storage")}
-                                </span>
-                                <strong>{storageQuery.data ? `${storageMeter.usedLabel} / ${storageMeter.totalLabel}` : "--"}</strong>
-                                <span className="wallet-topup-storage-track" aria-hidden="true">
-                                    <span style={{ width: `${storageMeter.percent}%` }} />
-                                </span>
-                                <small>
-                                    {storageMeter.state === "read_only"
-                                        ? t("account.wallet.storageReadOnly")
-                                        : storageMeter.state === "grace"
-                                          ? t("account.wallet.storageGrace")
-                                          : storageMeter.purchasedLabel
-                                            ? t("account.wallet.storagePurchased", { size: storageMeter.purchasedLabel })
-                                            : t("account.layout.storage.remaining", { size: storageMeter.remainingLabel })}
-                                </small>
-                            </button>
                         </div>
+                        <nav className="wallet-topup-nav" role="tablist" aria-label={t("nav.tools.wallet")}>
+                            <button type="button" role="tab" aria-selected={tab === "topup"} onClick={() => setTab("topup")}>
+                                {t("account.wallet.tabTopup")}
+                            </button>
+                            <button type="button" role="tab" aria-selected={tab === "orders"} onClick={() => setTab("orders")}>
+                                {t("account.payment.ordersTitle")}
+                            </button>
+                            {creditsEnabled ? (
+                                <>
+                                    <button type="button" role="tab" aria-selected={redeemOpen} onClick={() => setRedeemOpen(true)}>
+                                        {t("account.wallet.tabRedeem")}
+                                    </button>
+                                    <button type="button" role="tab" aria-selected={tab === "income"} onClick={() => openHistory("income")}>
+                                        {t("account.wallet.tabIncome")}
+                                    </button>
+                                    <button type="button" role="tab" aria-selected={tab === "history"} onClick={() => openHistory("history")}>
+                                        {t("account.wallet.tabHistory")}
+                                    </button>
+                                </>
+                            ) : null}
+                        </nav>
                     </header>
-
-                    <div className="workspace-wallet-tabs" role="tablist" aria-label={t("nav.tools.wallet")}>
-                        <button type="button" role="tab" aria-selected={activeTab === "topup"} onClick={() => setTab("topup")}>
-                            <WalletCards />
-                            {t("account.wallet.tabTopup")}
-                        </button>
-                        <button type="button" role="tab" aria-selected={activeTab === "orders"} onClick={() => setTab("orders")}>
-                            <CreditCard />
-                            {t("account.payment.ordersTitle")}
-                        </button>
-                        {creditsEnabled ? (
-                            <>
-                                <button type="button" role="tab" aria-selected={activeTab === "redeem"} onClick={() => setTab("redeem")}>
-                                    <TicketCheck />
-                                    {t("account.wallet.tabRedeem")}
-                                </button>
-                                <button type="button" role="tab" aria-selected={activeTab === "income"} onClick={() => openHistory("income")}>
-                                    <Coins />
-                                    {t("account.wallet.tabIncome")}
-                                </button>
-                                <button type="button" role="tab" aria-selected={activeTab === "history"} onClick={() => openHistory("history")}>
-                                    <History />
-                                    {t("account.wallet.tabHistory")}
-                                </button>
-                            </>
-                        ) : null}
-                    </div>
 
                     {activeTab === "orders" ? (
                         <PaymentOrdersPanel onOpen={(id) => void payment.showOrder(id)} />
@@ -332,6 +300,7 @@ export function WorkspaceWalletModal({
                         <WalletTopupPanel
                             loading={paymentsLoading}
                             products={products}
+                            availableMicrocredits={wallet?.account.availableMicrocredits}
                             paymentOptions={paymentOptions}
                             usdCnyRate={usdCnyRate}
                             focusKind={focusKind}
@@ -349,31 +318,6 @@ export function WorkspaceWalletModal({
                                 navigate("/assets");
                             }}
                         />
-                    ) : activeTab === "redeem" ? (
-                        <div className="workspace-wallet-content is-redeem">
-                            <section className="workspace-wallet-section is-redeem">
-                                <div className="workspace-wallet-section-heading">
-                                    <div>
-                                        <h3>{t("account.wallet.redeemTitle")}</h3>
-                                        <p>
-                                            {t("account.wallet.redeemDescription")}
-                                            {redeemPurchaseUrl ? (
-                                                <a className="workspace-wallet-redeem-link" href={redeemPurchaseUrl} target="_blank" rel="noopener noreferrer">
-                                                    {t("account.wallet.redeemGet")}
-                                                </a>
-                                            ) : null}
-                                        </p>
-                                    </div>
-                                    <TicketCheck />
-                                </div>
-                                <div className="workspace-wallet-redeem-row">
-                                    <Input size="large" value={code} maxLength={32} placeholder={t("account.wallet.redeemPlaceholder")} onChange={(event) => setCode(event.target.value.replace(/\s/g, ""))} onPressEnter={() => void redeem()} />
-                                    <Button size="large" loading={redeeming} disabled={code.trim().length !== 32} onClick={() => void redeem()}>
-                                        {t("account.wallet.redeemSubmit")}
-                                    </Button>
-                                </div>
-                            </section>
-                        </div>
                     ) : (
                         <div className="workspace-wallet-content is-history">
                             <div className="workspace-wallet-history-toolbar">
@@ -440,6 +384,39 @@ export function WorkspaceWalletModal({
                             </div>
                         </div>
                     )}
+                </div>
+            </AppModal>
+
+            <AppModal open={redeemOpen} title={null} footer={null} centered width="min(520px, calc(100vw - 28px))" onCancel={() => setRedeemOpen(false)} rootClassName="workspace-wallet-redeem-modal">
+                <div className="workspace-wallet-redeem-dialog">
+                    <header>
+                        <div>
+                            <span className="workspace-wallet-kicker">
+                                <TicketCheck />
+                                {t("account.wallet.tabRedeem")}
+                            </span>
+                            <h2>{t("account.wallet.redeemTitle")}</h2>
+                        </div>
+                    </header>
+                    <div className="workspace-wallet-redeem-user">
+                        <span className="wallet-topup-avatar">{user ? <UserAvatar user={user} /> : <CircleUserRound aria-hidden="true" />}</span>
+                        <strong>{user?.displayName || user?.username || t("account.wallet.redeemTitle")}</strong>
+                    </div>
+                    <div className="workspace-wallet-redeem-form">
+                        <Input size="large" value={code} maxLength={32} placeholder={t("account.wallet.redeemPlaceholder")} onChange={(event) => setCode(event.target.value.replace(/\s/g, ""))} onPressEnter={() => void redeem()} />
+                        <Button type="primary" size="large" loading={redeeming} disabled={code.trim().length !== 32} onClick={() => void redeem()}>
+                            {t("account.wallet.redeemSubmit")}
+                        </Button>
+                    </div>
+                    <section className="workspace-wallet-redeem-notice">
+                        <strong>{t("account.wallet.redeemTitle")}</strong>
+                        <p>{t("account.wallet.redeemDescription")}</p>
+                        {redeemPurchaseUrl ? (
+                            <a className="workspace-wallet-redeem-link" href={redeemPurchaseUrl} target="_blank" rel="noopener noreferrer">
+                                {t("account.wallet.redeemGet")}
+                            </a>
+                        ) : null}
+                    </section>
                 </div>
             </AppModal>
 

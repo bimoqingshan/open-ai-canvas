@@ -1,0 +1,216 @@
+.community-canvas-modal .ant-modal-container {
+    overflow: hidden;
+    border: 1px solid var(--workspace-overlay-border, var(--border));
+    border-radius: var(--r-lg, 10px);
+    background: var(--workspace-overlay-bg-strong, var(--card));
+    box-shadow: var(--workspace-overlay-shadow, 0 28px 84px rgba(15, 23, 42, 0.18));
+}
+
+.community-canvas-modal .ant-modal-close {
+    display: none;
+}
+
+.community-canvas-modal__shell {
+    display: grid;
+    grid-template-rows: 54px minmax(0, 1fr);
+    height: min(88vh, 900px);
+    min-height: min(480px, calc(100vh - 24px));
+}
+
+.community-canvas-modal__bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    border-bottom: 1px solid var(--workspace-overlay-divider, var(--border));
+    padding: 0 14px 0 18px;
+    background: var(--workspace-overlay-bg-strong, var(--card));
+    color: var(--foreground);
+}
+
+.community-canvas-modal__bar > div:first-child {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 10px;
+}
+
+.community-canvas-modal__bar > div:first-child > span,
+.community-canvas-modal__actions > span {
+    color: color-mix(in srgb, var(--foreground) 54%, transparent);
+    font-size: 11px;
+}
+
+.community-canvas-modal__bar strong {
+    max-width: 40vw;
+    overflow: hidden;
+    color: var(--foreground);
+    font-size: 13px;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.community-canvas-modal__actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.community-canvas-modal__view-switch {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 2px;
+    border: 1px solid var(--workspace-overlay-divider, var(--border));
+    border-radius: 8px;
+    padding: 2px;
+    background: color-mix(in srgb, var(--workspace-overlay-bg-strong, var(--card)) 82%, transparent);
+}
+
+.community-canvas-modal__view-switch button {
+    display: grid;
+    width: 28px;
+    height: 28px;
+    place-items: center;
+    border: 0;
+    border-radius: 5px;
+    background: transparent;
+    color: var(--muted-foreground);
+    cursor: pointer;
+}
+
+.community-canvas-modal__view-switch button:hover {
+    background: var(--workspace-overlay-hover, color-mix(in srgb, var(--foreground) 7%, transparent));
+    color: var(--foreground);
+}
+
+.community-canvas-modal__view-switch button.is-active {
+    background: var(--control-selected-bg, color-mix(in srgb, var(--foreground) 8%, transparent));
+    color: var(--control-selected-fg, var(--foreground));
+}
+
+.community-canvas-modal__view-switch button:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 1px;
+}
+
+.community-canvas-modal__view-switch svg {
+    width: 16px;
+    height: 16px;
+}
+
+.community-canvas-modal__copy-button.ant-btn {
+    border-color: var(--btn-solid-bg) !important;
+    background: var(--btn-solid-bg) !important;
+    color: var(--btn-solid-fg) !important;
+    box-shadow: none !important;
+}
+
+.community-canvas-modal__copy-button.ant-btn:hover,
+.community-canvas-modal__copy-button.ant-btn:focus-visible {
+    border-color: var(--btn-solid-hover-bg) !important;
+    background: var(--btn-solid-hover-bg) !important;
+    color: var(--btn-solid-fg) !important;
+}
+
+.community-canvas-modal__actions > button:last-child {
+    display: grid;
+    width: 28px;
+    height: 28px;
+    place-items: center;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: color-mix(in srgb, var(--foreground) 62%, transparent);
+    cursor: pointer;
+}
+
+.community-canvas-modal__actions > button:last-child:hover {
+    background: var(--workspace-overlay-hover, color-mix(in srgb, var(--foreground) 8%, transparent));
+    color: var(--foreground);
+}
+
+.community-canvas-modal__actions > button:last-child svg {
+    width: 16px;
+    height: 16px;
+}
+
+.community-canvas-modal iframe {
+    width: 100%;
+    height: 100%;
+    border: 0;
+    background: var(--background);
+}
+
+.dark .community-canvas-modal .ant-modal-container,
+.dark .community-canvas-modal__bar {
+    background: var(--workspace-overlay-bg-strong, var(--card));
+}
+
+.dark .community-canvas-modal .ant-modal-container {
+    border-color: rgba(255, 255, 255, 0.12);
+    box-shadow: 0 32px 96px rgba(0, 0, 0, 0.5);
+}
+
+.dark .community-canvas-modal__bar {
+    border-bottom-color: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.78);
+}
+
+.dark .community-canvas-modal__bar > div:first-child > span,
+.dark .community-canvas-modal__actions > span {
+    color: rgba(255, 255, 255, 0.52);
+}
+
+.dark .community-canvas-modal__bar strong {
+    color: #fff;
+}
+
+.dark .community-canvas-modal__actions > button:last-child {
+    color: rgba(255, 255, 255, 0.65);
+}
+
+.dark .community-canvas-modal__actions > button:last-child:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+}
+
+.dark .community-canvas-modal iframe {
+    background: #0a0b0e;
+}
+
+@media (max-width: 520px) {
+    .community-canvas-modal__shell {
+        grid-template-rows: 58px minmax(0, 1fr);
+        height: min(88vh, 900px);
+        min-height: min(420px, calc(100vh - 24px));
+    }
+
+    .community-canvas-modal__bar {
+        gap: 8px;
+        padding-inline: 10px;
+    }
+
+    .community-canvas-modal__actions {
+        flex: 0 0 auto;
+        gap: 4px;
+    }
+
+    .community-canvas-modal__view-switch button {
+        width: 26px;
+        height: 26px;
+    }
+
+    .community-canvas-modal__actions > span {
+        display: none;
+    }
+
+    .community-canvas-modal__bar > div:first-child {
+        gap: 6px;
+    }
+
+    .community-canvas-modal__bar strong {
+        max-width: 32vw;
+    }
+}

@@ -250,6 +250,7 @@ export function buildAudioGenerationMetadata(config: AiConfig): CanvasNodeMetada
         audioLanguage: config.audioLanguage,
         audioDialect: config.audioDialect,
         audioInstructions: config.audioInstructions,
+        instrumental: config.audioInstrumental === "" || config.audioInstrumental === undefined ? undefined : config.audioInstrumental === "true",
         audioEmotionControlMethod: config.audioEmotionControlMethod,
         audioEmotionRandom: config.audioEmotionRandom,
         audioEmotionHappy: config.audioEmotionHappy,
@@ -475,6 +476,7 @@ export function buildGenerationConfig(config: AiConfig, node: CanvasNodeData | u
         audioLanguage: node?.metadata?.audioLanguage ?? config.audioLanguage ?? defaultConfig.audioLanguage,
         audioDialect: node?.metadata?.audioDialect ?? config.audioDialect ?? defaultConfig.audioDialect,
         audioInstructions: node?.metadata?.audioInstructions ?? config.audioInstructions ?? defaultConfig.audioInstructions,
+        audioInstrumental: node?.metadata?.instrumental === undefined ? (config.audioInstrumental ?? "") : String(node.metadata.instrumental),
         count: String(node?.metadata?.count ?? (mode === "image" ? config.canvasImageCount || config.count || defaultConfig.count : config.count || defaultConfig.count)),
     };
     const imageSize = mode === "image" ? requestedConfig.size : undefined;

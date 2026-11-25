@@ -1,5 +1,5 @@
 import { Button, Dropdown, Input } from "antd";
-import { ArrowUpRight, CircleAlert, Clapperboard, Copy, Download, Ellipsis, ImageOff, ImagePlus, LoaderCircle, Maximize2, Play, RefreshCw, RotateCcw, Search, SquarePen, X } from "lucide-react";
+import { ArrowRight, CircleAlert, Clapperboard, Copy, Download, Ellipsis, ImageOff, ImagePlus, LoaderCircle, Maximize2, Play, RefreshCw, RotateCcw, Search, SquarePen, X } from "lucide-react";
 import { memo, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 
 import { WorkspaceNoResultsState, WorkspaceState } from "@/components/layout/workspace-state";
@@ -468,7 +468,7 @@ export function WorkbenchGallery({
                                             <strong>{tool.name}</strong>
                                             <small>{workbenchToolSubtitle(tool)}</small>
                                         </span>
-                                        <ArrowUpRight />
+                                        <ArrowRight />
                                     </button>
                                 ))}
                             </div>

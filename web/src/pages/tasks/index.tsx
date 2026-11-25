@@ -74,7 +74,7 @@ function taskStatusFilter(value: string | null): TaskStatusFilter {
     return value === "failed" || value === "active" || value === "succeeded" ? value : "all";
 }
 
-export default function TasksPage() {
+export default function TasksPage({ embedded = false }: { embedded?: boolean } = {}) {
     const { message } = App.useApp();
     const { t } = useTranslation();
     const navigate = useNavigate();
@@ -426,7 +426,7 @@ export default function TasksPage() {
 
     return (
         <>
-            <WorkspacePage grid className="library-page task-center-page">
+            <WorkspacePage grid scroll={!embedded} className={`library-page task-center-page${embedded ? " task-library-page-embedded" : ""}`}>
                 <div className="studio-band">
                     <PageHeader
                         title={t("library.tasks.page.title")}

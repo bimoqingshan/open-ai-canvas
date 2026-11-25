@@ -34,6 +34,14 @@ func registerAuthProfileRoutes(r *gin.RouterGroup, svc *service.Service) {
 		}
 		ok(c, result)
 	})
+	profile.GET("/activity", func(c *gin.Context) {
+		result, err := svc.AccountActivity(actor(c))
+		if err != nil {
+			failService(c, err)
+			return
+		}
+		ok(c, result)
+	})
 	profile.PUT("/avatar", func(c *gin.Context) {
 		policy, available := loadRuntimePolicy(c, svc)
 		if !available || !enforceRateLimit(c, "profile-avatar:"+actor(c).ID, policy.Request.ResourceUploadPerMinute, time.Minute) {

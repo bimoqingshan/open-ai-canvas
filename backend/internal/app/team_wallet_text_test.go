@@ -15,6 +15,34 @@ import (
 	"yingce/backend/internal/platform"
 )
 
+func TestTeamTaskBillingModes(t *testing.T) {
+	tests := []struct {
+		capability string
+		mode       string
+		want       bool
+	}{
+		{"text", "fixed_request", true},
+		{"text", "token", true},
+		{"image", "fixed_request", true},
+		{"image", "image_usage", true},
+		{"image", "per_second", false},
+		{"video", "fixed_request", true},
+		{"video", "per_second", true},
+		{"video", "image_usage", false},
+		{"audio", "fixed_request", true},
+		{"audio", "per_second", true},
+		{"audio", "token", true},
+		{"audio", "image_usage", false},
+	}
+	for _, test := range tests {
+		t.Run(test.capability+"/"+test.mode, func(t *testing.T) {
+			if got := teamTaskBillingModeAllowed(test.capability, test.mode); got != test.want {
+				t.Fatalf("teamTaskBillingModeAllowed(%q, %q) = %v, want %v", test.capability, test.mode, got, test.want)
+			}
+		})
+	}
+}
+
 func newTeamTextTestService(t *testing.T) (*Service, *gorm.DB) {
 	t.Helper()
 	allowLoopbackProviderTest(t)

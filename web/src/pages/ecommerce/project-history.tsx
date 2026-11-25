@@ -1,5 +1,5 @@
 import { App, Modal } from "antd";
-import { ArrowUpRight, Check, ChevronLeft, ChevronRight, FolderOpen, Images, Trash2, X } from "lucide-react";
+import { ArrowRight, Check, ChevronLeft, ChevronRight, FolderOpen, Images, Trash2, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AppModal } from "@/components/ui/product/app-modal";
 import { deleteEcommerceProjects, listEcommerceProjectPage, projectDraft, projectPlan, type EcommerceProject } from "@/services/api/ecommerce";
@@ -109,7 +109,7 @@ function ProjectCard({
                         {selected ? <Check size={15} strokeWidth={2.6} /> : null}
                     </span>
                 ) : (
-                    <ArrowUpRight className="ecommerce-project-open-icon" size={17} aria-hidden="true" />
+                    <ArrowRight className="ecommerce-project-open-icon" size={17} aria-hidden="true" />
                 )}
             </button>
             {!selecting ? (

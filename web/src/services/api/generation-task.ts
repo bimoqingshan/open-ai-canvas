@@ -461,6 +461,7 @@ export function backendProviderConfig(config: AiConfig, mode: BackendGenerationM
         audioLanguage: config.audioLanguage,
         audioDialect: config.audioDialect,
         audioInstructions: config.audioInstructions,
+        audioInstrumental: config.audioInstrumental === "" || config.audioInstrumental === undefined ? undefined : config.audioInstrumental,
         systemPrompt: config.systemPrompt,
     };
     if (logicalModelIDForConfig(config)) return generationOptions;
@@ -506,6 +507,7 @@ function workflowProviderConfig(config: AiConfig, requestConfig: ReturnType<type
         audioLanguage: config.audioLanguage,
         audioDialect: config.audioDialect,
         audioInstructions: config.audioInstructions,
+        audioInstrumental: config.audioInstrumental === "" || config.audioInstrumental === undefined ? undefined : config.audioInstrumental,
         workflowId: workflow.workflowId,
         webappId: workflow.webappId,
         workflowJson: workflow.workflowJson,
@@ -561,7 +563,8 @@ export function parseBackendGenerationResult(task: GenerationTask): BackendGener
     if (!task.resultJson) throw new Error("后端任务没有返回结果");
     const result = JSON.parse(task.resultJson) as BackendGenerationResult & { text?: unknown };
     if (!result || typeof result !== "object") throw new Error("后端任务结果格式错误");
-    return { ...result, text: normalizeBackendText(result.text) };
+    const audios = result.audios?.length ? result.audios : result.audio ? [result.audio] : undefined;
+    return { ...result, ...(audios ? { audios, audio: result.audio || audios[0] } : {}), text: normalizeBackendText(result.text) };
 }
 
 function normalizeBackendText(value: unknown): string | undefined {

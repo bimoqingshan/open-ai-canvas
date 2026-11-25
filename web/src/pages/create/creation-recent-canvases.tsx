@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useMemo, useRef, useState } from "react";
 import { App } from "antd";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowUpRight, Clock3, LoaderCircle, PanelsTopLeft, Plus } from "lucide-react";
+import { ArrowRight, Clock3, LoaderCircle, PanelsTopLeft, Plus } from "lucide-react";
 import { Link, useNavigate } from "react-router";
 
 import { ProjectPreview } from "@/components/canvas/canvas-project-card";
@@ -77,7 +77,7 @@ export function CreationRecentCanvases({ onRequireLogin }: { onRequireLogin: () 
                 </h2>
                 <Link to={workspacePath("/canvas")} className="creation-section-link">
                     {t("create.recent.viewAll")}
-                    <ArrowUpRight aria-hidden="true" />
+                    <ArrowRight aria-hidden="true" />
                 </Link>
             </header>
             <div className="creation-canvas-strip creation-scrollbar" role="list" aria-label={t("create.recent.listLabel")} aria-busy={loading}>

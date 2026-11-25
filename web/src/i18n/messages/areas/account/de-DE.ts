@@ -288,6 +288,8 @@ export const deDE: DeepStringRecord<typeof zhCN> = {
                 },
             },
             tbd: "Offen",
+            chooseProduct: "Paket wählen",
+            selectedProduct: "Ausgewählt",
             startsAt: "Verkaufsstart {{time}}",
             ended: "Beendet",
             soldOut: "Ausverkauft",

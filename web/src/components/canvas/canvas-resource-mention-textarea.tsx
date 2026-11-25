@@ -489,7 +489,7 @@ export const CanvasResourceMentionTextarea = forwardRef<HTMLTextAreaElement, Pro
     } as CSSProperties;
     const menuAnchor = useRichEditor ? editorRef.current : textareaRef.current;
     const menu =
-        !readOnly && mention && (mention.fromShelf || availableReferences.length > 0) && menuAnchor ? (
+        !readOnly && mention && (mention.fromShelf || availableReferences.length > 0 || includeAssetLibrary) && menuAnchor ? (
             <MentionMenu
                 // 换到另一个 @ 时重置分类和高亮。
                 key={mention.start}

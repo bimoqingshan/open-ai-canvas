@@ -23,6 +23,9 @@ export function CanvasWorkspacePanel({
     selectedNodeIds,
     onClose,
     open,
+    tab,
+    onTabChange,
+    hideCollapsedRail = false,
     onOpen,
     onInsertAssets,
     onFocus,
@@ -36,6 +39,9 @@ export function CanvasWorkspacePanel({
     selectedNodeIds: Set<string>;
     onClose: () => void;
     open: boolean;
+    tab?: "nodes" | "assets" | "tasks" | "history";
+    onTabChange?: (tab: "nodes" | "assets" | "tasks" | "history") => void;
+    hideCollapsedRail?: boolean;
     onOpen: () => void;
     onInsertAssets: (payloads: InsertAssetPayload[]) => Promise<unknown>;
     onFocus: (id: string) => void;
@@ -43,13 +49,18 @@ export function CanvasWorkspacePanel({
     onProjectAssets?: () => void;
     onCancelTask: (task: GenerationTask) => void;
 }) {
-    const [tab, setTab] = useState("nodes");
+    const [localTab, setLocalTab] = useState<"nodes" | "assets" | "tasks" | "history">("nodes");
+    const activeTab = tab ?? localTab;
+    const selectTab = (nextTab: "nodes" | "assets" | "tasks" | "history") => {
+        setLocalTab(nextTab);
+        onTabChange?.(nextTab);
+    };
     const theme = canvasThemes[useActiveTheme()];
     const [query, setQuery] = useState("");
-    const history = tab === "history";
+    const history = activeTab === "history";
     const deferredQuery = useDeferredValue(query);
     const config = useEffectiveConfig();
-    const results = useMemo(() => (open && tab === "nodes" ? searchCanvasNodes(nodes, deferredQuery, nodes.length, config) : []), [open, tab, nodes, deferredQuery, config]);
+    const results = useMemo(() => (open && activeTab === "nodes" ? searchCanvasNodes(nodes, deferredQuery, nodes.length, config) : []), [open, activeTab, nodes, deferredQuery, config]);
     const toggleRef = useRef<HTMLButtonElement>(null);
     const closePanel = () => {
         onClose();
@@ -61,15 +72,15 @@ export function CanvasWorkspacePanel({
     const markKeyboard = (event: KeyboardEvent<HTMLElement>) => {
         if (event.key === "Tab" || event.key === "Enter" || event.key === " ") event.currentTarget.dataset.inputModality = "keyboard";
     };
-    const tasks = useCanvasWorkspaceTasks(projectId, open && (tab === "tasks" || history));
+    const tasks = useCanvasWorkspaceTasks(projectId, open && (activeTab === "tasks" || history));
     const content = (
         <div className="canvas-workspace-panel relative flex h-full min-h-0 flex-col text-foreground" data-canvas-wheel-scroll>
             <button className="canvas-workspace-close" type="button" aria-label="关闭工作区" onClick={closePanel}>
                 <X className="size-4" />
             </button>
-            {tab === "nodes" && <CanvasWorkspaceNodeListPanel nodes={nodes} config={config} results={results} query={query} deferredQuery={deferredQuery} selectedNodeIds={selectedNodeIds} onQueryChange={setQuery} onFocus={onFocus} />}
-            {tab === "assets" && <CanvasWorkspaceAssetPanel onInsert={onInsertAssets} onManage={onAssets} onProjectAssets={onProjectAssets} />}
-            {(tab === "tasks" || history) && (
+            {activeTab === "nodes" && <CanvasWorkspaceNodeListPanel nodes={nodes} config={config} results={results} query={query} deferredQuery={deferredQuery} selectedNodeIds={selectedNodeIds} onQueryChange={setQuery} onFocus={onFocus} />}
+            {activeTab === "assets" && <CanvasWorkspaceAssetPanel onInsert={onInsertAssets} onManage={onAssets} onProjectAssets={onProjectAssets} />}
+            {(activeTab === "tasks" || history) && (
                 <>
                     {tasks.error ? (
                         <div role="alert" className="p-4">
@@ -106,62 +117,66 @@ export function CanvasWorkspacePanel({
             onPointerDown={(event) => event.stopPropagation()}
         >
             {heading}
-            <div
-                className="canvas-workspace-shell"
-                onKeyDown={(event) => {
-                    if (open && event.key === "Escape" && !event.defaultPrevented) {
-                        event.stopPropagation();
-                        closePanel();
-                    }
-                }}
-            >
-                <nav className="canvas-workspace-rail" aria-label="画布左侧菜单" data-canvas-wheel-scroll>
-                    <div className="canvas-workspace-rail-items">
-                        {entries.map(({ id, label, icon: Icon }) => (
+            {open || !hideCollapsedRail ? (
+                <div
+                    className="canvas-workspace-shell"
+                    onKeyDown={(event) => {
+                        if (open && event.key === "Escape" && !event.defaultPrevented) {
+                            event.stopPropagation();
+                            closePanel();
+                        }
+                    }}
+                >
+                    {!hideCollapsedRail || open ? (
+                        <nav className="canvas-workspace-rail" aria-label="画布左侧菜单" data-canvas-wheel-scroll>
+                            <div className="canvas-workspace-rail-items">
+                                {entries.map(({ id, label, icon: Icon }) => (
+                                    <button
+                                        key={id}
+                                        type="button"
+                                        className="canvas-workspace-rail-button"
+                                        title={open && activeTab === id ? `收起${label}` : `打开${label}`}
+                                        aria-pressed={open && activeTab === id}
+                                        onPointerDown={markPointer}
+                                        onKeyDown={markKeyboard}
+                                        onClick={() => {
+                                            if (open && activeTab === id) onClose();
+                                            else {
+                                                selectTab(id as "nodes" | "assets" | "tasks" | "history");
+                                                onOpen();
+                                            }
+                                        }}
+                                    >
+                                        <Icon />
+                                        <span>{label}</span>
+                                    </button>
+                                ))}
+                            </div>
+                            <span className="canvas-workspace-rail-divider" aria-hidden />
                             <button
-                                key={id}
+                                ref={toggleRef}
+                                className="canvas-workspace-rail-button canvas-workspace-rail-toggle"
                                 type="button"
-                                className="canvas-workspace-rail-button"
-                                title={open && tab === id ? `收起${label}` : `打开${label}`}
-                                aria-pressed={open && tab === id}
+                                onClick={open ? onClose : onOpen}
                                 onPointerDown={markPointer}
                                 onKeyDown={markKeyboard}
-                                onClick={() => {
-                                    if (open && tab === id) onClose();
-                                    else {
-                                        setTab(id);
-                                        onOpen();
-                                    }
-                                }}
+                                aria-expanded={open}
+                                aria-controls={open ? "canvas-workspace-details" : undefined}
+                                aria-label={open ? "折叠面板" : "展开面板"}
+                                title={open ? "收起面板，扩大画布" : "展开工作区面板"}
                             >
-                                <Icon />
-                                <span>{label}</span>
+                                {open ? <PanelLeftClose /> : <PanelLeftOpen />}
+                                <span>{open ? "收起" : "展开"}</span>
                             </button>
-                        ))}
-                    </div>
-                    <span className="canvas-workspace-rail-divider" aria-hidden />
-                    <button
-                        ref={toggleRef}
-                        className="canvas-workspace-rail-button canvas-workspace-rail-toggle"
-                        type="button"
-                        onClick={open ? onClose : onOpen}
-                        onPointerDown={markPointer}
-                        onKeyDown={markKeyboard}
-                        aria-expanded={open}
-                        aria-controls={open ? "canvas-workspace-details" : undefined}
-                        aria-label={open ? "折叠面板" : "展开面板"}
-                        title={open ? "收起面板，扩大画布" : "展开工作区面板"}
-                    >
-                        {open ? <PanelLeftClose /> : <PanelLeftOpen />}
-                        <span>{open ? "收起" : "展开"}</span>
-                    </button>
-                </nav>
-                {open ? (
-                    <aside id="canvas-workspace-details" className="min-h-0 min-w-0 flex-1" aria-label="画布工作区">
-                        {content}
-                    </aside>
-                ) : null}
-            </div>
+                        </nav>
+                    ) : null}
+                    {open ? (
+                        <aside id="canvas-workspace-details" className="min-h-0 min-w-0 flex-1" aria-label="画布工作区">
+                            {content}
+                        </aside>
+                    ) : null}
+                </div>
+            ) : null}
         </div>
     );
 }

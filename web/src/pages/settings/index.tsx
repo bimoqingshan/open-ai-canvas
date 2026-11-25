@@ -25,16 +25,17 @@ import { PreferencesPane } from "./preferences-pane";
 import { arkPortraitOverviewQueryKey, getArkPortraitOverview } from "@/services/api/ark-portraits";
 import "./settings-page.css";
 
-type ConfigSectionKey = "profile" | "channels" | "models" | "runninghub" | "preferences" | "prompts" | "agent-memory" | "storage" | "ark-assets" | "diagnostics" | "feedbacks";
-type ConfigSectionGroup = "general" | "creation" | "integrations" | "support";
+export type ConfigSectionKey = "profile" | "channels" | "models" | "runninghub" | "preferences" | "prompts" | "agent-memory" | "storage" | "ark-assets" | "diagnostics" | "feedbacks";
+export type ConfigSectionGroup = "general" | "creation" | "integrations" | "support";
+export type ConfigSection = { key: ConfigSectionKey; group: ConfigSectionGroup; icon: ReactNode };
 
-const configSectionGroups: ConfigSectionGroup[] = ["general", "creation", "integrations", "support"];
+export const configSectionGroups: ConfigSectionGroup[] = ["general", "creation", "integrations", "support"];
 
 /**
  * 分类按用途分组：账户与通用 → 创作 → 渠道与存储 → 帮助与反馈。
  * 分组名在 settings.groups.<group>，分类名称与说明在 settings.sections.<key>。
  */
-const configSections: Array<{ key: ConfigSectionKey; group: ConfigSectionGroup; icon: ReactNode }> = [
+export const configSections: ConfigSection[] = [
     { key: "profile", group: "general", icon: <UserRound className="size-4" /> },
     { key: "preferences", group: "general", icon: <SlidersHorizontal className="size-4" /> },
     { key: "models", group: "creation", icon: <Boxes className="size-4" /> },
@@ -52,7 +53,9 @@ export function isConfigSection(value: string | null): value is ConfigSectionKey
     return configSections.some((section) => section.key === value);
 }
 
-export default function SettingsPage() {
+export { configSections as settingsConfigSections };
+
+export default function SettingsPage({ embeddedSection }: { embeddedSection?: ConfigSectionKey } = {}) {
     const { message } = App.useApp();
     const { t } = useTranslation();
     const navigate = useNavigate();
@@ -168,6 +171,11 @@ export default function SettingsPage() {
         ),
         prompts: (
             <SettingsPane fill>
+                <div className="settings-pane-header">
+                    <div className="min-w-0">
+                        <h2>{t("settings.sections.prompts.label")}</h2>
+                    </div>
+                </div>
                 <PromptPreferencesPane />
             </SettingsPane>
         ),
@@ -207,6 +215,10 @@ export default function SettingsPage() {
             </SettingsPane>
         ),
     };
+
+    if (embeddedSection) {
+        return <div className={`settings-page-embedded ${embeddedSection === "prompts" ? "is-fill" : ""}`}>{panes[embeddedSection]}</div>;
+    }
 
     return (
         <main className="settings-page app-workspace-page app-user-workspace flex h-full min-h-0 flex-col text-foreground">

@@ -1,7 +1,10 @@
 import type { DeepStringRecord } from "../../zh-CN";
 import type { zhCN } from "./zh-CN";
+import { enUS } from "./en-US";
 
 export const deDE: DeepStringRecord<typeof zhCN> = {
+    home: enUS.home,
+    composer: enUS.composer,
     historySync: {
         manage: "Verlaufskopien ansehen ({{count}})",
         backupsTitle: "Konfliktkopien des Verlaufs",
@@ -59,6 +62,7 @@ export const deDE: DeepStringRecord<typeof zhCN> = {
     status: {
         videoGenerated: "Video generiert",
         imageGenerated: "Bild generiert",
+        audioGenerated: "Audio generiert",
         imagesPartiallyGenerated: "{{done}} Bilder generiert, {{failed}} fehlgeschlagen",
         stopped: "Gestoppt",
         failed: "Generierung fehlgeschlagen",
@@ -71,6 +75,7 @@ export const deDE: DeepStringRecord<typeof zhCN> = {
     library: {
         unsupportedKind: "Dieser Asset-Typ kann noch nicht als Referenz verwendet werden",
         imageOnly: "Die Bilderstellung akzeptiert nur Referenzbilder",
+        audioOnly: "Die Audiogenerierung akzeptiert nur Referenz-Audio",
         videoModelNoVideo: "Das aktuelle Videomodell akzeptiert keine Referenzvideos",
         videoModelNoAudio: "Das aktuelle Videomodell akzeptiert kein Referenz-Audio",
         videoModelNoImage: "Das aktuelle Videomodell akzeptiert keine Referenzbilder",
@@ -104,11 +109,13 @@ export const deDE: DeepStringRecord<typeof zhCN> = {
         text: "Text",
         image: "Bild",
         video: "Video",
+        audio: "Audio",
     },
     shotScript: {
         text: "Kreative Notizen",
         image: "Bildanweisung",
         video: "Shot-Skript",
+        audio: "Audio-Skript",
     },
     ratio: {
         square: "Quadrat",
@@ -207,6 +214,8 @@ export const deDE: DeepStringRecord<typeof zhCN> = {
         imagesPartiallyGenerated: "{{done}} Bilder generiert, {{failed}} fehlgeschlagen",
         noVideoResult: "Die Aufgabe hat kein Video zurückgegeben",
         videoResultUnavailable: "Das Videoergebnis ist nicht verfügbar",
+        noAudioResult: "Die Aufgabe hat kein Audio zurückgegeben",
+        audioResultUnavailable: "Das Audioergebnis ist nicht verfügbar",
         handoffAssetsPending: "Einige generierte Assets werden noch gespeichert. Wechsle gleich zur Leinwand.",
         handoffSyncPending: "Die Unterhaltung ist auf diesem Gerät gespeichert. Die Cloud-Synchronisierung ist noch nicht fertig.",
         handoffFailed: "Wechsel zur Leinwand fehlgeschlagen. Die Unterhaltung bleibt erhalten.",
@@ -235,6 +244,7 @@ export const deDE: DeepStringRecord<typeof zhCN> = {
         uploadHintText: "Bilder, Videos, Audio und gängige Dokumente; Medien werden in der Bibliothek gespeichert",
         uploadHintVideo: "Bilder, Videos und Audio; werden nach dem Upload in der Bibliothek gespeichert",
         uploadHintImage: "Bilder; werden nach dem Upload in der Bibliothek gespeichert",
+        uploadHintAudio: "Audio; wird nach dem Upload in der Bibliothek gespeichert",
         uploadHintEagle: "Schreibt in den aktuellen Eagle-Ordner; Eagle akzeptiert derzeit nur Bilddateien",
     },
 };

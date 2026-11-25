@@ -280,7 +280,7 @@ func billingAccountQuery(tx *gorm.DB, order model.BillingOrder) *gorm.DB {
 }
 
 func validateTeamBillingReservation(tx *gorm.DB, order *model.BillingOrder) error {
-	if order.Capability != "text" || (order.BillingMode != "fixed_request" && order.BillingMode != "token") || order.Scene != "team_text" || !order.ChargeLimitSet || order.ChargeLimitMicrocredits != order.AmountMicrocredits || order.BillingAccountID != model.TeamMemberCreditAccountID(order.MembershipID) {
+	if !teamBillingCapabilitySupported(order.Capability, order.BillingMode, order.Scene) || !order.ChargeLimitSet || order.ChargeLimitMicrocredits != order.AmountMicrocredits || order.BillingAccountID != model.TeamMemberCreditAccountID(order.MembershipID) {
 		return ErrTeamWalletForbidden
 	}
 	repo := New(tx)
@@ -295,6 +295,21 @@ func validateTeamBillingReservation(tx *gorm.DB, order *model.BillingOrder) erro
 		return ErrTeamWalletForbidden
 	}
 	return nil
+}
+
+func teamBillingCapabilitySupported(capability, billingMode, scene string) bool {
+	switch capability {
+	case "text":
+		return scene == "team_text" && (billingMode == "fixed_request" || billingMode == "token")
+	case "image":
+		return scene == "team_image" && (billingMode == "fixed_request" || billingMode == "image_usage")
+	case "video":
+		return scene == "team_video" && (billingMode == "fixed_request" || billingMode == "per_second")
+	case "audio":
+		return scene == "team_audio" && (billingMode == "fixed_request" || billingMode == "per_second" || billingMode == "token")
+	default:
+		return false
+	}
 }
 
 func lockTeamForBilling(tx *gorm.DB, orderID string) error {

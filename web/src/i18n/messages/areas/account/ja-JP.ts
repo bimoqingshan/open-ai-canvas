@@ -288,6 +288,8 @@ export const jaJP: DeepStringRecord<typeof zhCN> = {
                 },
             },
             tbd: "未定",
+            chooseProduct: "プランを選択",
+            selectedProduct: "選択中",
             startsAt: "{{time}} 販売開始",
             ended: "終了",
             soldOut: "売り切れ",

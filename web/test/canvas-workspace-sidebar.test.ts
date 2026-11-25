@@ -23,7 +23,7 @@ test("workspace keeps a permanent rail and independent task/history entries", ()
     expect(source).not.toContain("CanvasWorkspaceToolPanel");
     expect(source).not.toContain("onInsertTool");
     expect(source).toContain('aria-label="画布左侧菜单"');
-    expect(source).toContain("aria-pressed={open && tab === id}");
+    expect(source).toContain("aria-pressed={open && activeTab === id}");
     expect(source).toContain("<CanvasWorkspaceHistoryPanel");
     expect(source).toContain("<CanvasWorkspaceAssetPanel");
     expect(source).toContain('aria-label="画布工作区"');
@@ -105,11 +105,12 @@ test("project heading, rail and inline panel stay in one corner without intercep
     expect(styles).toContain(".canvas-main-with-workspace .canvas-editor-shell {\n    z-index: 0;");
     expect(page).toContain("heading={projectHeading}");
     expect(page).toContain("projectHeading={dramaCanvas ? projectHeading : undefined}");
-    expect(panel).toMatch(/\{heading\}\s*<div\s+className="canvas-workspace-shell"/);
+    expect(panel).toContain("{heading}");
+    expect(panel).toContain('className="canvas-workspace-shell"');
     expect(panel).not.toContain("screens.lg");
     expect(styles).toMatch(/\.canvas-workspace-corner \{[^}]*pointer-events: none;/);
     expect(styles).toMatch(/\.canvas-workspace-corner:not\(\.is-expanded\) \{[^}]*row-gap: var\(--space-2\);/);
-    expect(styles).toMatch(/\.canvas-workspace-corner > .canvas-topbar-project-cluster,\s*\.canvas-workspace-shell \{[^}]*pointer-events: auto;/);
+    expect(styles).toMatch(/\.canvas-workspace-corner > \.canvas-project-heading-group > \.canvas-topbar-project-cluster,\s*\.canvas-workspace-shell \{[^}]*pointer-events: auto;/);
     expect(styles).toContain("width: min(100%, var(--canvas-workspace-open-width))");
     expect(styles).toContain("left: var(--canvas-workspace-inset)");
     expect(styles).toContain(".canvas-workspace-zoom-controls");

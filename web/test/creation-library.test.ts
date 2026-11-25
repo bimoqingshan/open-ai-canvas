@@ -8,7 +8,7 @@ const image: Asset = { ...base, id: "remote-image", kind: "image", data: { dataU
 const video: Asset = { ...base, id: "remote-video", kind: "video", data: { url: "https://example.com/video.mp4", storageKey: "resource:video", width: 1280, height: 720, durationMs: 1000, bytes: 2048, mimeType: "video/mp4" } };
 const audio: Asset = { ...base, id: "remote-audio", kind: "audio", data: { url: "https://example.com/audio.mp3", storageKey: "resource:audio", durationMs: 1000, bytes: 512, mimeType: "audio/mpeg" } };
 
-function remoteItem(asset: Asset, mode: "text" | "image" | "video" = "text") {
+function remoteItem(asset: Asset, mode: "text" | "image" | "video" | "audio" = "text") {
     return remoteAssetToPickerItem(asset, undefined, true, creationLibraryDisabledReason(mode, asset.kind));
 }
 
@@ -40,6 +40,12 @@ describe("creation remote library", () => {
         expect(remoteItem(video, "image").disabledReason).toBe("图片创作仅支持参考图");
         expect(remoteItem(audio, "image").disabledReason).toBe("图片创作仅支持参考图");
         expect(() => creationLibrarySelectionToAttachments([image.id, video.id], [remoteItem(image), remoteItem(video)], "image")).toThrow("图片创作仅支持参考图");
+    });
+
+    test("audio creation only accepts audio references", () => {
+        expect(remoteItem(audio, "audio").disabledReason).toBeUndefined();
+        expect(remoteItem(image, "audio").disabledReason).toBe("音频创作仅支持参考音频");
+        expect(() => creationLibrarySelectionToAttachments([image.id], [remoteItem(image)], "audio")).toThrow("音频创作仅支持参考音频");
     });
 
     test("video creation revalidates changed model capabilities on confirmation", () => {

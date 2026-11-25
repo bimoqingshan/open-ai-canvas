@@ -18,15 +18,19 @@ test("connection menu omits the header and provides descriptions for every optio
     expect(component).toContain("onCreate(option.type)");
 });
 
-test("add-node submenu uses a four-column medium-size grid", () => {
+test("add-node submenu uses grouped vertical command rows", () => {
     const menu = readFileSync(new URL("../src/components/canvas/canvas-create-menu.tsx", import.meta.url), "utf8");
     const context = readFileSync(new URL("../src/components/canvas/canvas-context-menu.tsx", import.meta.url), "utf8");
-    const styles = readFileSync(new URL("../src/styles/globals.css", import.meta.url), "utf8");
-    expect(menu).toMatch(/aria-label=\{t\("canvasA\.createMenu\.nodesGroup"\)\} className="[^"]*\bgrid grid-cols-4\b/);
+    const contextStyles = readFileSync(new URL("../src/components/canvas/canvas-context-menu.css", import.meta.url), "utf8");
+    expect(menu).toMatch(/aria-label=\{t\("canvasA\.createMenu\.nodesGroup"\)\} className="[^"]*\bflex flex-col\b/);
     expect(canvasAZh.createMenu.nodesGroup).toBe("创作节点");
-    expect(menu).toContain("size-9 shrink-0");
-    expect(context).toContain("w-[360px]");
-    expect(styles).toContain("--canvas-create-node-height: calc(var(--space-16) + var(--space-3))");
+    expect(menu).toContain("size-7 shrink-0");
+    expect(menu).not.toContain('t("canvasA.createMenu.resourceGroup")');
+    expect(menu).not.toContain('command.section === "resource"');
+    expect(context).toContain("w-[260px]");
+    expect(context).toContain("getDirectCreateMenuLeft(parentPosition.left)");
+    expect(contextStyles).toContain("calc(var(--canvas-context-anchor-y) - 50%)");
+    expect(context).toContain('!(menu.type === "canvas" && menu.createOpen)');
 });
 
 test("hover never changes row height; descriptions live in a fixed-height detail area", () => {

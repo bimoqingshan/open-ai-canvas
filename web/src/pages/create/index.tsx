@@ -5,13 +5,13 @@ import { App, Button, Spin } from "antd";
 import { Tooltip } from "@/components/ui/base/tooltip";
 import { History, Maximize2, PenLine } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { useNavigate } from "react-router";
+import { useLocation, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 
 import type { AssetLibraryPickerItem } from "@/components/assets/asset-library-picker-modal";
-import { PersonalSpaceCreditOverview } from "@/components/layout/team-space-directory";
+import type { CanvasAudioSettingKey } from "@/components/canvas/canvas-audio-settings-popover";
 import { generationErrorCode, generationErrorMessage } from "@/lib/generation-error";
-import { creationMessageMayHaveExternalVideoResult } from "@/lib/creation-message-recovery";
+import { creationMessageMayHaveExternalMediaResult } from "@/lib/creation-message-recovery";
 import { useGenerationBatchLimit } from "@/lib/generation-batch-limit";
 import { isGenerationCostUncertainError } from "@/lib/canvas/canvas-generation-batch";
 import { imageParameterRequest } from "@/lib/image-parameters";
@@ -89,7 +89,7 @@ import {
     reconcileCreationTaskMessages,
     type PersistedCreationTask,
 } from "./creation-conversations";
-import { CreationComposer, CreationEmptySuggest, CreationHistoryDrawer, CreationMessageView, CreationModeCard, CreationWorkspaceToolbar, creationAssetCategoryLabels } from "./creation-workspace";
+import { CreationComposer, CreationEmptySuggest, CreationHistoryDrawer, CreationMessageView, CreationModeCard, CreationModeDropdown, CreationWorkspaceToolbar, creationAssetCategoryLabels } from "./creation-workspace";
 import { appendCreationReference, creationAttachmentFromResult, type CreationReferenceDrop } from "./creation-reference-drop";
 import { declaredInspirationSources } from "@/lib/inspirations/catalog";
 import { fillablePrompt } from "@/lib/inspirations/resolve";
@@ -145,6 +145,8 @@ function writeComposerPref(key: string, value: boolean) {
 
 export default function CreatePage() {
     const { t } = useTranslation();
+    const location = useLocation();
+    const inspirationLaunch = location.state as { inspirationPrompt?: unknown; inspirationMode?: unknown } | null;
     const [agentMode, setAgentMode] = useState(false);
     const { message: toast, modal } = App.useApp();
     const navigate = useNavigate();
@@ -187,8 +189,16 @@ export default function CreatePage() {
     const [historySync, setHistorySync] = useState<HistorySyncStatus>({ phase: "local" });
     const inspirationSourcesVisible = useUserStore((state) => state.features.inspirationSourcesVisible);
     const [conversationScope, setConversationScope] = useState<string | null>(() => (initialConversationSnapshot ? activeConversationScope : null));
-    const [mode, setMode] = useState<CreationMode>(() => (workspaceTeamId ? "text" : initialComposerPreferences.mode || defaultCreationMode));
-    const [prompt, setPrompt] = useState("");
+    const [mode, setMode] = useState<CreationMode>(() =>
+        workspaceTeamId
+            ? inspirationLaunch?.inspirationMode === "image" || inspirationLaunch?.inspirationMode === "video" || inspirationLaunch?.inspirationMode === "audio" || inspirationLaunch?.inspirationMode === "text"
+                ? inspirationLaunch.inspirationMode
+                : "text"
+            : inspirationLaunch?.inspirationMode === "image" || inspirationLaunch?.inspirationMode === "video" || inspirationLaunch?.inspirationMode === "audio" || inspirationLaunch?.inspirationMode === "text"
+              ? inspirationLaunch.inspirationMode
+              : initialComposerPreferences.mode || defaultCreationMode,
+    );
+    const [prompt, setPrompt] = useState(() => (typeof inspirationLaunch?.inspirationPrompt === "string" ? inspirationLaunch.inspirationPrompt : ""));
     const [attachments, setAttachments] = useState<CreationAttachment[]>([]);
     const promptRef = useRef(prompt);
     const attachmentsRef = useRef(attachments);
@@ -250,7 +260,7 @@ export default function CreatePage() {
         () => conversations.filter((conversation) => conversation.id === activeId || conversation.messages.length > 0).sort((left, right) => conversationTimestamp(right.updatedAt) - conversationTimestamp(left.updatedAt)),
         [activeId, conversations],
     );
-    const preferredModel = mode === "text" ? config.textModel : mode === "image" ? config.imageModel : config.videoModel;
+    const preferredModel = mode === "text" ? config.textModel : mode === "image" ? config.imageModel : mode === "audio" ? config.audioModel : config.videoModel;
     const hasPrompt = Boolean(prompt.trim());
     const modelRequirements = useMemo<ModelRequirements>(
         () => ({
@@ -352,7 +362,11 @@ export default function CreatePage() {
     useEffect(() => {
         if (!composerPreferencesHydrated || composerPreferencesInitialized) return;
         const saved = useCreationPreferencesStore.getState().preferences;
-        const nextMode = workspaceTeamId ? "text" : saved.mode || defaultCreationMode;
+        const preferredTeamMode =
+            inspirationLaunch?.inspirationMode === "image" || inspirationLaunch?.inspirationMode === "video" || inspirationLaunch?.inspirationMode === "audio" || inspirationLaunch?.inspirationMode === "text"
+                ? inspirationLaunch.inspirationMode
+                : saved.mode;
+        const nextMode = workspaceTeamId ? preferredTeamMode || "text" : saved.mode || defaultCreationMode;
         setMode(nextMode);
         if (nextMode === "image" && saved.image) {
             if (saved.image.ratio) setRatio(saved.image.ratio);
@@ -592,7 +606,7 @@ export default function CreatePage() {
                                     runtime.applyGenerationConsumerEffect(item, effectKey, (current) => ({
                                         ...current,
                                         status: "done" as const,
-                                        content: current.mode === "video" ? t("create.status.videoGenerated") : t("create.status.imageGenerated"),
+                                        content: current.mode === "video" ? t("create.status.videoGenerated") : current.mode === "audio" ? t("create.status.audioGenerated") : t("create.status.imageGenerated"),
                                         error: undefined,
                                         errorKind: undefined,
                                         syncInterrupted: undefined,
@@ -660,7 +674,7 @@ export default function CreatePage() {
     useEffect(() => {
         const remountRecovery = () => {
             if (document.visibilityState === "hidden") return;
-            const hasExternallyRecoverableTask = conversationsRef.current.some((conversation) => conversation.messages.some((message) => creationMessageMayHaveExternalVideoResult(message)));
+            const hasExternallyRecoverableTask = conversationsRef.current.some((conversation) => conversation.messages.some((message) => creationMessageMayHaveExternalMediaResult(message)));
             if (hasExternallyRecoverableTask) setRecoveryEpoch((value) => value + 1);
         };
         window.addEventListener("focus", remountRecovery);
@@ -744,13 +758,12 @@ export default function CreatePage() {
     };
 
     const selectMode = (next: CreationMode) => {
-        if (workspaceTeamId && next !== "text") return;
         setMode(next);
         rememberMode(next);
-        const nextModels = selectableModelsByCapability(config, next);
-        const current = next === "text" ? config.textModel : next === "image" ? config.imageModel : config.videoModel;
+        const nextModels = selectableModelsByCapability(config, next).filter((model) => !workspaceTeamId || resolveModelChannel(config, model).scope === "system");
+        const current = next === "text" ? config.textModel : next === "image" ? config.imageModel : next === "audio" ? config.audioModel : config.videoModel;
         if (!nextModels.includes(current) && nextModels[0]) {
-            updateConfig(next === "text" ? "textModel" : next === "image" ? "imageModel" : "videoModel", nextModels[0]);
+            updateConfig(next === "text" ? "textModel" : next === "image" ? "imageModel" : next === "audio" ? "audioModel" : "videoModel", nextModels[0]);
         }
     };
 
@@ -784,19 +797,19 @@ export default function CreatePage() {
         () =>
             externalAssetSources.items.map((item) => ({
                 ...item,
-                disabledReason: creationLibraryDisabledReason(mode, item.external?.item.kind, videoReferenceLimits),
+                disabledReason: creationLibraryDisabledReason(mode, item.external?.item.kind, videoReferenceLimits, Boolean(workspaceTeamId)),
             })),
         [externalAssetSources.items, mode, videoReferenceLimits],
     );
     const libraryItems = useMemo<AssetLibraryPickerItem[]>(
         () => [
             ...assets
-                .filter((asset) => (workspaceTeamId ? asset.kind === "text" : asset.kind === "image" || asset.kind === "video" || asset.kind === "audio"))
+                .filter((asset) => (asset.kind === "image" || asset.kind === "video" || asset.kind === "audio") && (!workspaceTeamId || mode === "audio" || asset.kind !== "audio"))
                 .map((asset) => ({
                     id: asset.id,
                     title: asset.title,
                     category: asset.category || "other",
-                    kindLabel: asset.kind === "text" ? t("library.picker.kind.text") : asset.kind === "video" ? t("create.kind.video") : asset.kind === "audio" ? t("create.kind.audio") : t("create.kind.image"),
+                    kindLabel: asset.kind === "video" ? t("create.kind.video") : asset.kind === "audio" ? t("create.kind.audio") : t("create.kind.image"),
                     archived: asset.status === "archived",
                     asset,
                     searchText: (asset.tags || []).join(" "),
@@ -834,7 +847,7 @@ export default function CreatePage() {
     };
     const uploadLibraryAssets = async (files: FileList | File[]) => {
         if (!requireCreationLogin()) return [];
-        const next = Array.from(files).filter((file) => creationFileAccepted(mode, file));
+        const next = Array.from(files).filter((file) => creationFileAccepted(mode, file, Boolean(workspaceTeamId)));
         if (!next.length) return [];
         const settled = await Promise.allSettled(
             next.map(async (file) => {
@@ -851,7 +864,7 @@ export default function CreatePage() {
 
     const handleLibrarySelect = async (selectedIds: string[], pickedItems = libraryItems) => {
         if (!requireCreationLogin()) return;
-        if (workspaceTeamId) {
+        if (workspaceTeamId && mode === "text") {
             await loadAssetsForUse(selectedIds, { refresh: true });
             const byId = new Map(useAssetStore.getState().assets.map((asset) => [asset.id, asset]));
             const passages = selectedIds.map((id) => {
@@ -863,7 +876,7 @@ export default function CreatePage() {
             setLibraryOpen(false);
             return;
         }
-        const next = creationLibrarySelectionToAttachments(selectedIds, pickedItems, mode, videoReferenceLimits);
+        const next = creationLibrarySelectionToAttachments(selectedIds, pickedItems, mode, videoReferenceLimits, Boolean(workspaceTeamId));
         if (!next.length) return;
         const selected = new Set(selectedIds);
         const cachedIds = new Set(useAssetStore.getState().assets.map((asset) => asset.id));
@@ -1161,6 +1174,7 @@ export default function CreatePage() {
             imageParameters: normalizedImage?.imageParameters || imageParameters,
             videoModel: selectedModel,
             textModel: selectedModel,
+            audioModel: selectedModel,
             ...(mode === "image" ? { size: normalizedImage?.size || ratio, quality: normalizedImage?.quality || quality, count: normalizedImage?.count || count, videoSeconds: config.videoSeconds } : {}),
         };
         let handedOverToRecovery = false;
@@ -1261,6 +1275,41 @@ export default function CreatePage() {
                 }
                 if (failedCount) toast.warning(t("create.page.imagesPartiallyGenerated", { done: resultUrls.length, failed: failedCount }));
                 updateOriginAssistant((item) => ({ ...item, content: failedCount ? t("create.status.imagesPartiallyGenerated", { done: resultUrls.length, failed: failedCount }) : t("create.status.imageGenerated") }));
+            } else if (mode === "audio") {
+                const result = await runtime.runGenerationOperationOnce(retryContext?.clientOperationId, () =>
+                    runtime.runBackendGenerationTask({
+                        mode: "audio",
+                        prompt: expandedPrompt,
+                        config: requestConfig,
+                        referenceAudios,
+                        signal: requestLifecycle.signal,
+                        metadata: { source: "create-page", conversationId: activeConversation.id, messageId: assistantMessage.id, ...referenceMetadata },
+                        onTaskUpdate: bindTask,
+                        ...retryContext,
+                    }),
+                );
+                if (!result.audio?.dataUrl) throw new Error(t("create.page.noAudioResult"));
+                const taskId = Array.from(boundTaskIds)[0];
+                if (!taskId) throw new Error(t("create.page.missingTaskId"));
+                const task = completedCreationGenerationTask(runtime, { taskId, task: boundTasks.get(taskId), mode: "audio", prompt: expandedPrompt, result, conversationId: activeConversation.id, messageId: assistantMessage.id });
+                const materialized = await runtime.consumeGenerationTaskMessage(
+                    task,
+                    assistantMessage.id,
+                    async ({ resultUrls, resultStorageKeys, effectKey }) => {
+                        await updateOriginAssistant(
+                            (item) =>
+                                runtime.applyGenerationConsumerEffect(item, effectKey, (current) => ({
+                                    ...current,
+                                    status: "done" as const,
+                                    content: t("create.status.audioGenerated"),
+                                    resultUrls,
+                                    ...(resultStorageKeys.length ? { resultStorageKeys } : {}),
+                                })).value,
+                        );
+                    },
+                    { signal: requestLifecycle.signal },
+                );
+                if (!runtime.generationTaskMaterializedUrls(materialized)[0]) throw new Error(t("create.page.audioResultUnavailable"));
             } else {
                 const result = await runtime.runGenerationOperationOnce(retryContext?.clientOperationId, () =>
                     runtime.runBackendGenerationTask({
@@ -1494,7 +1543,7 @@ export default function CreatePage() {
         setPrompt(item.content);
         setAttachments(item.attachments ? [...item.attachments] : []);
         setDraftReferences(item.references ? [...item.references] : []);
-        if (item.model) updateConfig(nextMode === "text" ? "textModel" : nextMode === "image" ? "imageModel" : "videoModel", item.model);
+        if (item.model) updateConfig(nextMode === "text" ? "textModel" : nextMode === "image" ? "imageModel" : nextMode === "audio" ? "audioModel" : "videoModel", item.model);
         if (!nextSettings) return;
         setRatio(nextSettings.ratio);
         setSeconds(nextSettings.seconds);
@@ -1643,7 +1692,8 @@ export default function CreatePage() {
         imageProfile,
         videoProfile,
         config: generationConfig,
-        onModelChange: (value: string) => updateConfig(mode === "text" ? "textModel" : mode === "image" ? "imageModel" : "videoModel", value),
+        onModelChange: (value: string) => updateConfig(mode === "text" ? "textModel" : mode === "image" ? "imageModel" : mode === "audio" ? "audioModel" : "videoModel", value),
+        onAudioConfigChange: (key: CanvasAudioSettingKey, value: string) => updateConfig(key === "instrumental" ? "audioInstrumental" : key, value),
         ratio,
         setRatio: setComposerRatio,
         seconds,
@@ -1672,24 +1722,23 @@ export default function CreatePage() {
         composerFocusRef,
         onPromptFocus: loadAddedSkills,
         onSubmit: () => {
-            if (prompt.trim() && !busy && !referenceReplacementBusy) trackSiteTrafficAction(mode === "text" ? "creation_submit_text" : mode === "image" ? "creation_submit_image" : "creation_submit_video");
+            if (prompt.trim() && !busy && !referenceReplacementBusy && mode !== "audio") trackSiteTrafficAction(mode === "text" ? "creation_submit_text" : mode === "image" ? "creation_submit_image" : "creation_submit_video");
             void submit();
         },
     };
+    const homeModePicker = (
+        <CreationModeDropdown
+            mode={mode}
+            onModeChange={(next) => {
+                setAgentMode(false);
+                selectMode(next);
+            }}
+        />
+    );
 
     return (
         <>
-            <div className="creation-home relative flex h-full min-h-0 flex-col overflow-hidden">
-                <p role="status" aria-live="polite" className="mx-auto px-4 py-1 text-xs text-foreground/55">
-                    <span title={historySync.message}>{t(`create.historySync.${historySync.phase}`)}</span>
-                    {historySync.message ? <span> · {historySync.message}</span> : null}
-                    {historySync.phase === "error" ? (
-                        <button type="button" className="ml-2 underline" onClick={() => void historySessionRef.current?.sync()}>
-                            {t("create.historySync.retry")}
-                        </button>
-                    ) : null}
-                    <CreationHistoryConflicts key={activeConversationScope} session={historySessionRef.current} status={historySync} busy={busy} />
-                </p>
+            <div className="creation-home creation-inspiration-layout relative flex h-full min-h-0 flex-col overflow-hidden">
                 {conversationStorageError ? (
                     <p role="status" className="mx-auto mb-3 max-w-3xl px-4 text-xs text-foreground/55">
                         本地历史读取失败，当前会话仍保留。 {conversationStorageError}{" "}
@@ -1737,34 +1786,46 @@ export default function CreatePage() {
                         </AnimatePresence>
                         <main ref={threadScrollRef} onScroll={handleThreadScroll} className="creation-home-scroll creation-scrollbar">
                             <section ref={launchpadRef} className="creation-launchpad" aria-label={t("create.page.launchpadLabel")}>
-                                <header className="creation-start-heading">
+                                <header className="creation-start-heading creation-inspiration-heading">
                                     <div>
                                         <h1>{themeHomeHeading || t("create.page.heading", { brand: brandName })}</h1>
                                         <p>{t("create.page.subheading")}</p>
                                     </div>
-                                    <button type="button" className="creation-history-entry" aria-label={t("create.page.viewHistory")} aria-expanded={historyOpen} onClick={() => setHistoryOpen(true)}>
-                                        <History aria-hidden="true" />
-                                        <span>{t("create.history.title")}</span>
-                                    </button>
+                                    <div className="creation-inspiration-history">
+                                        <button type="button" className="creation-history-entry" aria-label={t("create.page.viewHistory")} aria-expanded={historyOpen} onClick={() => setHistoryOpen(true)}>
+                                            <History aria-hidden="true" />
+                                            <span>{t("create.history.title")}</span>
+                                        </button>
+                                        <div className="creation-history-sync" role="status" aria-live="polite">
+                                            <span title={historySync.message}>{t(`create.historySync.${historySync.phase}`)}</span>
+                                            {historySync.message ? <span> · {historySync.message}</span> : null}
+                                            {historySync.phase === "error" ? (
+                                                <button type="button" onClick={() => void historySessionRef.current?.sync()}>
+                                                    {t("create.historySync.retry")}
+                                                </button>
+                                            ) : null}
+                                            <CreationHistoryConflicts key={activeConversationScope} session={historySessionRef.current} status={historySync} busy={busy} />
+                                        </div>
+                                    </div>
                                 </header>
                                 <div className={cn("creation-composer-stage is-home-mode", agentMode && "is-agent-mode")}>
-                                    <CreationModeCard
-                                        mode={mode}
-                                        agentActive={agentMode}
-                                        onAgentSelect={() => setAgentMode(true)}
-                                        onModeChange={(next) => {
-                                            setAgentMode(false);
-                                            selectMode(next);
-                                        }}
-                                    >
-                                        {agentMode ? (
+                                    {agentMode ? (
+                                        <CreationModeCard
+                                            mode={mode}
+                                            agentActive
+                                            onAgentSelect={() => setAgentMode(true)}
+                                            onModeChange={(next) => {
+                                                setAgentMode(false);
+                                                selectMode(next);
+                                            }}
+                                        >
                                             <CreationAgentEntry />
-                                        ) : (
-                                            <div className="creation-empty-composer">
-                                                <CreationComposer {...composerProps} variant="empty" />
-                                            </div>
-                                        )}
-                                    </CreationModeCard>
+                                        </CreationModeCard>
+                                    ) : (
+                                        <div className="creation-empty-composer">
+                                            <CreationComposer {...composerProps} modePicker={homeModePicker} variant="empty" />
+                                        </div>
+                                    )}
                                 </div>
                                 {!workspaceTeamId && (
                                     <CreationEmptySuggest
@@ -1778,7 +1839,6 @@ export default function CreatePage() {
                                     />
                                 )}
                             </section>
-                            {!workspaceTeamId && <PersonalSpaceCreditOverview />}
                             <CreationRecentCanvases onRequireLogin={() => openAuth()} />
                             <Suspense
                                 fallback={
@@ -1866,8 +1926,7 @@ export default function CreatePage() {
                 <Suspense fallback={null}>
                     <AssetLibraryPickerModal
                         remoteLibrary
-                        remoteKind={workspaceTeamId ? "text" : undefined}
-                        confirmLabel={workspaceTeamId ? (count) => `插入文本（${count}）` : undefined}
+                        remoteKind={undefined}
                         acceptRemoteItems
                         remoteItemDisabledReason={(asset) => creationLibraryDisabledReason(mode, asset.kind, videoReferenceLimits, Boolean(workspaceTeamId))}
                         open={libraryOpen}
@@ -1879,8 +1938,8 @@ export default function CreatePage() {
                             workspaceTeamId
                                 ? undefined
                                 : {
-                                      accept: creationUploadAccept(mode),
-                                      description: mode === "text" ? t("create.page.uploadHintText") : mode === "video" ? t("create.page.uploadHintVideo") : t("create.page.uploadHintImage"),
+                                      accept: creationUploadAccept(mode, Boolean(workspaceTeamId)),
+                                      description: mode === "text" ? t("create.page.uploadHintText") : mode === "video" ? t("create.page.uploadHintVideo") : mode === "audio" ? t("create.page.uploadHintAudio") : t("create.page.uploadHintImage"),
                                       onUpload: uploadLibraryAssets,
                                       external: {
                                           accept: "image/*",

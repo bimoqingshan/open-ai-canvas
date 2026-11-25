@@ -45,7 +45,7 @@ export const jaJP: DeepStringRecord<typeof zhCN> = {
         title: "ノードを追加",
         nodesGroup: "作成ノード",
         commandWithBadge: "{{label}}（{{badge}}）",
-        footerGroup: "ワークフローとインポート",
+        resourceGroup: "リソースをインポート",
     },
     audioPlayer: {
         defaultTitle: "音声",

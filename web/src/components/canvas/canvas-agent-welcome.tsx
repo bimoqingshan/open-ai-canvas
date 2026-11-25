@@ -1,5 +1,5 @@
 import { useSkillLibraryAccess } from "@/lib/skill-access";
-import { ArrowUpRight, Clapperboard, Layers3, Orbit, Sparkles } from "lucide-react";
+import { ArrowRight, Clapperboard, Layers3, Orbit, Sparkles } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { agentCopy, type CanvasAppearance } from "@/lib/canvas/agent-appearance";
 
@@ -36,7 +36,7 @@ export function AgentWelcome({ appearance, nodeCount, installedSkillCount = null
                             <strong>{t("canvasA.welcome.recommendTitle")}</strong>
                             <small>{installedSkillCount ? t("canvasA.welcome.recommendInstalled", { count: installedSkillCount }) : t("canvasA.welcome.recommendHint")}</small>
                         </span>
-                        <ArrowUpRight className="agent-welcome-arrow" aria-hidden="true" />
+                        <ArrowRight className="agent-welcome-arrow" aria-hidden="true" />
                     </button>
                 ) : null}
                 {canUseSkills && (
@@ -46,7 +46,7 @@ export function AgentWelcome({ appearance, nodeCount, installedSkillCount = null
                             <strong>{t("canvasA.welcome.chooseSkillTitle")}</strong>
                             <small>{t("canvasA.welcome.chooseSkillHint")}</small>
                         </span>
-                        <ArrowUpRight className="agent-welcome-arrow" aria-hidden="true" />
+                        <ArrowRight className="agent-welcome-arrow" aria-hidden="true" />
                     </button>
                 )}
                 <button type="button" onClick={() => onDraftPrompt("我想创作一段短片，请先和我一起梳理故事方向。先询问我的想法，不要直接生成。")}>
@@ -55,7 +55,7 @@ export function AgentWelcome({ appearance, nodeCount, installedSkillCount = null
                         <strong>{t("canvasA.welcome.storyTitle")}</strong>
                         <small>{t("canvasA.welcome.storyHint")}</small>
                     </span>
-                    <ArrowUpRight className="agent-welcome-arrow" aria-hidden="true" />
+                    <ArrowRight className="agent-welcome-arrow" aria-hidden="true" />
                 </button>
                 <button type="button" disabled={!nodeCount} onClick={() => onDraftPrompt("请先阅读当前画布，梳理素材与节点之间的关系，给出接下来的创作建议。先不要修改节点或提交生成任务。")}>
                     <Layers3 aria-hidden="true" />
@@ -63,7 +63,7 @@ export function AgentWelcome({ appearance, nodeCount, installedSkillCount = null
                         <strong>{t("canvasA.welcome.reviewTitle")}</strong>
                         <small>{nodeCount === null ? t("canvasA.welcome.reviewNoCanvas") : nodeCount > 0 ? t("canvasA.welcome.reviewNodes", { count: nodeCount }) : t("canvasA.welcome.reviewEmpty")}</small>
                     </span>
-                    <ArrowUpRight className="agent-welcome-arrow" aria-hidden="true" />
+                    <ArrowRight className="agent-welcome-arrow" aria-hidden="true" />
                 </button>
             </div>
             <p className="agent-welcome-footnote">{t("canvasA.welcome.footnote")}</p>

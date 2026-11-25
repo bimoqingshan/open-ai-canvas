@@ -146,7 +146,14 @@ export type CreateTaskInput = {
 };
 export async function createGenerationTask(input: CreateTaskInput) {
     if (workspaceTeamId) {
-        if (input.type !== "canvas_text" || input.operation !== "text") throw new Error("当前空间仅开放系统模型的文本生成");
+        if (!(
+            (input.type === "canvas_text" && input.operation === "text") ||
+            (input.type === "canvas_image" && input.operation === "image") ||
+            (input.type === "canvas_video" && ["video", "text_to_video", "image_to_video", "reference_to_video", "extend", "video_edit"].includes(input.operation || "")) ||
+            (input.type === "canvas_audio" && input.operation === "audio")
+        )) {
+            throw new Error("团队空间仅支持系统模型的文本、图片、视频和音频生成");
+        }
         const session = captureUserSession();
         const quote = await http.post<{ maxChargeMicrocredits: number }>("/tasks/quote", input);
         assertCurrentUserSession(session);

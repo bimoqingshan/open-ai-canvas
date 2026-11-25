@@ -39,6 +39,33 @@ type PublicModelAvailabilityFilter struct {
 	ChannelIDs []string
 }
 
+type AccountConsumptionDay struct {
+	Day                  string `json:"day"`
+	ConsumedMicrocredits int64  `json:"consumedMicrocredits"`
+}
+
+func (r *Repository) AccountUsageActivity(userID string, from, to time.Time) ([]AccountConsumptionDay, []model.UserDailyActivity, error) {
+	var consumption []AccountConsumptionDay
+	dayExpression := "DATE(created_at)"
+	if r.db.Dialector.Name() == "postgres" {
+		dayExpression = "DATE(created_at AT TIME ZONE 'UTC')"
+	}
+	err := r.db.Model(&model.CreditLedgerEntry{}).
+		Select(dayExpression+" AS day, COALESCE(SUM(CASE WHEN type = ? THEN ABS(amount_microcredits) ELSE 0 END), 0) AS consumed_microcredits", model.CreditLedgerConsume).
+		Where("user_id = ? AND created_at >= ? AND created_at < ?", userID, from, to).
+		Group(dayExpression).
+		Order(dayExpression).
+		Scan(&consumption).Error
+	if err != nil {
+		return nil, nil, err
+	}
+	activities, err := r.AnalyticsActivities(AnalyticsFilter{From: from, To: to, UserID: userID})
+	if err != nil {
+		return nil, nil, err
+	}
+	return consumption, activities, nil
+}
+
 func (r *Repository) RecordUserActivity(userID string, event string, count int, now time.Time) error {
 	if userID == "" {
 		return nil

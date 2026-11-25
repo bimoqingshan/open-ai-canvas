@@ -1,4 +1,4 @@
-import { ArrowUpRight, BadgeCheck, UsersRound } from "lucide-react";
+import { ArrowRight, BadgeCheck, UsersRound } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { CometCard } from "@/components/ui/aceternity/comet-card";
@@ -25,7 +25,7 @@ export function WelcomeContributorsCard() {
                     </div>
                     <a href={githubContributors} target="_blank" rel="noreferrer" aria-label={t("account.welcome.contributors.viewLabel")}>
                         {t("account.welcome.contributors.view")}
-                        <ArrowUpRight size={14} />
+                        <ArrowRight size={14} />
                     </a>
                 </div>
                 <ul className="welcome-contributors-list" aria-label={t("account.welcome.contributors.list")}>

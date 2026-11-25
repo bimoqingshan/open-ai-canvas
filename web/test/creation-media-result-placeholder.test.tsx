@@ -55,4 +55,11 @@ describe("首页图片结果在加载完成前就占好位置", () => {
         expect(markup).toContain('<i class="creation-image-result" data-media-state="loading"');
         expect(markup).not.toContain("暂时没有可预览的结果");
     });
+
+    test("音频结果使用原生播放器", () => {
+        const markup = renderResult({ mode: "audio", resultUrls: ["/audio.mp3"] });
+        expect(markup).toContain("<audio controls");
+        expect(markup).toContain('src="/audio.mp3"');
+        expect(markup).not.toContain("图片加载中");
+    });
 });

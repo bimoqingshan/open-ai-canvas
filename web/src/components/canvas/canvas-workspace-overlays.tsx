@@ -5,7 +5,7 @@ import { Clapperboard, Image as ImageIcon, List, Music2, Pencil, Table2, Video, 
 import { useCanvasOverlayLayer } from "@/components/canvas/canvas-overlay-layer";
 import { canvasThemes } from "@/lib/canvas-theme";
 import { aceternityMotion } from "@/lib/aceternity-motion";
-import { canvasOverlayBounds, observeCanvasOverlayBounds, placeCanvasNodePanel, updateCanvasNodePanelBounds } from "@/lib/canvas/canvas-overlay-layout";
+import { canvasOverlayBounds, observeCanvasOverlayBounds, updateCanvasNodePanelBounds } from "@/lib/canvas/canvas-overlay-layout";
 import { subscribeCanvasGraphicsViewportPreview, subscribeCanvasNodeDragPreview, subscribeCanvasViewportPreview } from "@/lib/canvas/canvas-live-viewport";
 import { useActiveTheme } from "@/stores/canvas/use-canvas-theme-store";
 import { CanvasNodeType, type CanvasNodeData, type ConnectionHandle, type Position, type ViewportTransform } from "@/types/canvas";
@@ -107,7 +107,6 @@ export function CanvasNodePanelOverlay({
     panelHeight = 190,
     dragOffset,
     isDragging = false,
-    allowOverflow = false,
     children,
 }: {
     node: CanvasNodeData;
@@ -117,18 +116,13 @@ export function CanvasNodePanelOverlay({
     panelHeight?: number;
     dragOffset?: Position | null;
     isDragging?: boolean;
-    allowOverflow?: boolean;
     children: ReactNode;
 }) {
     const panelRef = useRef<HTMLDivElement>(null);
     const resizeMotion = useCanvasNodeResizeMotion();
-    const { bringToFront, zIndex } = useCanvasOverlayLayer(`node-panel:${node.id}`, "var(--z-modal-overlay)");
+    const zIndex = "var(--z-node-overlay)";
     const initialWidth = resolveNodePanelWidth(node, viewport, panelWidth);
-    const initialPosition = getNodePanelPosition(node, viewport, { width: containerRef.current?.clientWidth || 0, height: containerRef.current?.clientHeight || 0 }, initialWidth, panelHeight, dragOffset);
-
-    useLayoutEffect(() => {
-        bringToFront();
-    }, [bringToFront]);
+    const initialPosition = getNodePanelPosition(node, viewport, { width: containerRef.current?.clientWidth || 0, height: containerRef.current?.clientHeight || 0 }, initialWidth, dragOffset);
 
     useLayoutEffect(() => {
         const container = containerRef.current;
@@ -144,11 +138,11 @@ export function CanvasNodePanelOverlay({
             const nextWidth = Math.min(resolveNodePanelWidth(visualNode, nextViewport, panelWidth), Math.max(0, availableBounds.right - availableBounds.left));
             const availableHeight = Math.max(0, availableBounds.bottom - availableBounds.top);
             panel.style.width = `${nextWidth}px`;
-            panel.style.maxHeight = `${availableHeight}px`;
-            panel.style.overflowY = measuredHeight > availableHeight || !allowOverflow ? "auto" : "visible";
+            panel.style.maxHeight = "none";
+            panel.style.overflowY = "visible";
             // 视口预览期间世界层刚写入 transform，读取节点布局会强制浏览器同步
             // layout。节点位置和拖拽偏移已经在这里可用，直接用世界坐标计算浮层位置。
-            const position = placeCanvasNodePanel(visualNode, nextViewport, availableBounds, { width: nextWidth, height: measuredHeight }, liveDragOffset);
+            const position = getNodePanelPosition(visualNode, nextViewport, { width: container.clientWidth, height: container.clientHeight }, nextWidth, liveDragOffset);
             panel.style.transform = `translate3d(${position.left}px, ${position.top}px, 0)`;
             updateCanvasNodePanelBounds(container, panel, { left: position.left, top: position.top, right: position.left + nextWidth, bottom: position.top + Math.min(measuredHeight, availableHeight) });
         };
@@ -177,7 +171,7 @@ export function CanvasNodePanelOverlay({
             unsubscribeDrag();
             updateCanvasNodePanelBounds(container, panel, null);
         };
-    }, [allowOverflow, containerRef, dragOffset?.x, dragOffset?.y, isDragging, node.height, node.id, node.position.x, node.position.y, node.width, panelHeight, panelWidth, resizeMotion, viewport]);
+    }, [containerRef, dragOffset?.x, dragOffset?.y, isDragging, node.height, node.id, node.position.x, node.position.y, node.width, panelHeight, panelWidth, resizeMotion, viewport]);
 
     return (
         <div
@@ -186,11 +180,9 @@ export function CanvasNodePanelOverlay({
             data-canvas-node-panel
             data-popover-anchor-container
             data-canvas-wheel-scroll
-            className={`thin-scrollbar absolute max-w-[calc(100%_-_24px)] ${allowOverflow ? "overflow-visible" : "overflow-y-auto"}`}
-            style={{ left: 0, top: 0, transform: `translate3d(${initialPosition.left}px, ${initialPosition.top}px, 0)`, width: initialWidth, maxHeight: allowOverflow ? "none" : "calc(100% - 84px)", zIndex }}
+            className="thin-scrollbar absolute max-w-[calc(100%_-_24px)] overflow-visible"
+            style={{ left: 0, top: 0, transform: `translate3d(${initialPosition.left}px, ${initialPosition.top}px, 0)`, width: initialWidth, zIndex }}
             onMouseDown={(event) => event.stopPropagation()}
-            onPointerDownCapture={bringToFront}
-            onFocusCapture={bringToFront}
             onPointerDown={(event) => event.stopPropagation()}
             onWheel={(event) => event.stopPropagation()}
         >
@@ -379,6 +371,14 @@ function getConnectionMenuPosition(position: Position, viewport: ViewportTransfo
     };
 }
 
-export function getNodePanelPosition(node: CanvasNodeData, viewport: ViewportTransform, viewportSize: { width: number; height: number }, panelWidth: number, panelHeight: number, dragOffset?: Position | null) {
-    return placeCanvasNodePanel(node, viewport, canvasOverlayBounds(viewportSize), { width: panelWidth, height: panelHeight }, dragOffset);
+export function getNodePanelPosition(node: CanvasNodeData, viewport: ViewportTransform, viewportSize: { width: number; height: number }, panelWidth: number, dragOffset?: Position | null) {
+    const bounds = canvasOverlayBounds(viewportSize);
+    const width = Math.min(panelWidth, Math.max(0, bounds.right - bounds.left));
+    const center = viewport.x + (node.position.x + (dragOffset?.x || 0) + node.width / 2) * viewport.k;
+    const nodeBottom = viewport.y + (node.position.y + (dragOffset?.y || 0) + node.height) * viewport.k;
+    return {
+        left: Math.min(Math.max(center - width / 2, bounds.left), bounds.right - width),
+        top: nodeBottom + 10,
+        placement: "below" as const,
+    };
 }

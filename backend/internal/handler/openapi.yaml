@@ -2312,7 +2312,7 @@ paths:
     get:
       tags: [meta]
       summary: 登录用户读取功能开放状态
-      responses: { '200': { description: data.features 包括布尔值 teamsEnabled（默认 false）和 creditsEnabled } }
+      responses: { '200': { description: data.features 包括 assetsEnabled（默认 true）、teamsEnabled（默认 false）和其他功能开关 } }
   /admin/settings/features:
     get:
       tags: [admin]
@@ -2321,7 +2321,7 @@ paths:
     patch:
       tags: [admin]
       summary: 管理员修改功能开关并记录审计，未提交的字段保持原值
-      requestBody: { required: true, content: { application/json: { schema: { type: object, properties: { teamsEnabled: { type: boolean, default: false }, creditsEnabled: { type: boolean }, welcomeEnabled: { type: boolean } } } } } }
+      requestBody: { required: true, content: { application/json: { schema: { type: object, properties: { assetsEnabled: { type: boolean, default: true }, teamsEnabled: { type: boolean, default: false }, creditsEnabled: { type: boolean }, welcomeEnabled: { type: boolean } } } } } }
       responses: { '200': { description: data.features 为保存后的完整设置 }, '403': { $ref: '#/components/responses/Error' } }
   /public/welcome:
     get:
@@ -3951,6 +3951,18 @@ paths:
       tags: [auth]
       summary: 当前用户个人信息及安全能力
       description: 返回 user、hasPassword、emailEnabled、linuxdoEnabled、linuxdoBound、wechatEnabled、wechatBound 和可选 reauthenticatedUntil；个人头像选择覆盖第三方头像。内部密码散列与头像版本字段不返回。
+      responses:
+        "200":
+          $ref: "#/components/responses/Envelope"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+  /auth/profile/activity:
+    get:
+      tags: [auth]
+      summary: 当前用户近 365 天用量与活跃统计
+      description: 返回逐日积分消费和活跃情况，以及总消耗、单日峰值、近七日消耗、活跃天数和最长连续活跃天数；日期按 UTC 自然日统计。
       responses:
         "200":
           $ref: "#/components/responses/Envelope"

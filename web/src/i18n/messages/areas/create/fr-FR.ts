@@ -1,7 +1,10 @@
 import type { DeepStringRecord } from "../../zh-CN";
 import type { zhCN } from "./zh-CN";
+import { enUS } from "./en-US";
 
 export const frFR: DeepStringRecord<typeof zhCN> = {
+    home: enUS.home,
+    composer: enUS.composer,
     historySync: {
         manage: "Voir les copies de l’historique ({{count}})",
         backupsTitle: "Copies des conflits de l’historique",
@@ -59,6 +62,7 @@ export const frFR: DeepStringRecord<typeof zhCN> = {
     status: {
         videoGenerated: "Vidéo générée",
         imageGenerated: "Image générée",
+        audioGenerated: "Audio généré",
         imagesPartiallyGenerated: "{{done}} images générées, {{failed}} en échec",
         stopped: "Arrêté",
         failed: "Échec de la génération",
@@ -71,6 +75,7 @@ export const frFR: DeepStringRecord<typeof zhCN> = {
     library: {
         unsupportedKind: "Ce type de ressource ne peut pas encore servir de référence",
         imageOnly: "La création d'images n'accepte que des images de référence",
+        audioOnly: "La création audio n'accepte que des références audio",
         videoModelNoVideo: "Le modèle vidéo actuel n'accepte pas de vidéo de référence",
         videoModelNoAudio: "Le modèle vidéo actuel n'accepte pas d'audio de référence",
         videoModelNoImage: "Le modèle vidéo actuel n'accepte pas d'image de référence",
@@ -104,11 +109,13 @@ export const frFR: DeepStringRecord<typeof zhCN> = {
         text: "Texte",
         image: "Image",
         video: "Vidéo",
+        audio: "Audio",
     },
     shotScript: {
         text: "Notes créatives",
         image: "Consignes d'image",
         video: "Script de plan",
+        audio: "Script audio",
     },
     ratio: {
         square: "Carré",
@@ -207,6 +214,8 @@ export const frFR: DeepStringRecord<typeof zhCN> = {
         imagesPartiallyGenerated: "{{done}} images générées, {{failed}} en échec",
         noVideoResult: "La tâche n'a renvoyé aucune vidéo",
         videoResultUnavailable: "Le résultat vidéo n'est pas disponible",
+        noAudioResult: "La tâche n'a renvoyé aucun audio",
+        audioResultUnavailable: "Le résultat audio n'est pas disponible",
         handoffAssetsPending: "Certaines ressources générées sont encore en cours d'enregistrement. Passez au canevas dans un instant.",
         handoffSyncPending: "La conversation est enregistrée sur cet appareil. La synchronisation cloud n'est pas terminée.",
         handoffFailed: "Impossible de passer au canevas. La conversation d'origine est conservée.",
@@ -235,6 +244,7 @@ export const frFR: DeepStringRecord<typeof zhCN> = {
         uploadHintText: "Images, vidéos, audio et documents courants ; les médias sont enregistrés dans la bibliothèque",
         uploadHintVideo: "Images, vidéos et audio ; enregistrés dans la bibliothèque après import",
         uploadHintImage: "Images ; enregistrées dans la bibliothèque après import",
+        uploadHintAudio: "Audio ; enregistré dans la bibliothèque après import",
         uploadHintEagle: "Écrit dans le dossier Eagle actuel ; Eagle n'accepte actuellement que les images",
     },
 };

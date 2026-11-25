@@ -93,6 +93,19 @@ export function canvasToolbarLayoutLevel(availableWidth: number, measuredWidths:
     return measuredWidths[current] > availableWidth ? Math.min(2, current + 1) : current;
 }
 
+export function canvasNodeToolbarAnchor(node: CanvasNodeData, viewport: ViewportTransform, bounds: CanvasOverlayBounds, toolbarWidth: number, dragOffset?: Position | null) {
+    const scale = Math.max(viewport.k, 0.05);
+    const nodeLeft = viewport.x + (node.position.x + (dragOffset?.x || 0)) * scale;
+    const nodeTop = viewport.y + (node.position.y + (dragOffset?.y || 0)) * scale;
+    const nodeWidth = node.width * scale;
+    const halfToolbar = toolbarWidth / 2;
+    const center = nodeLeft + nodeWidth / 2;
+    return {
+        left: Math.min(Math.max(center, bounds.left + halfToolbar), Math.max(bounds.left + halfToolbar, bounds.right - halfToolbar)),
+        top: nodeTop - 30,
+    };
+}
+
 /** Toolbar anchors are their horizontal center and bottom edge. */
 export function avoidCanvasNodePanels(anchor: { left: number; top: number }, size: Size, bounds: CanvasOverlayBounds, panels: readonly CanvasOverlayBounds[]) {
     let { left, top } = anchor;
@@ -105,20 +118,4 @@ export function avoidCanvasNodePanels(anchor: { left: number; top: number }, siz
         else if (bounds.bottom - panel.bottom >= size.height + 8) top = panel.bottom + size.height + 8;
     }
     return { left, top };
-}
-
-export function placeCanvasNodePanel(node: CanvasNodeData, viewport: ViewportTransform, bounds: CanvasOverlayBounds, size: Size, dragOffset?: Position | null) {
-    const width = Math.min(size.width, Math.max(0, bounds.right - bounds.left));
-    const height = Math.min(size.height, Math.max(0, bounds.bottom - bounds.top));
-    const center = viewport.x + (node.position.x + (dragOffset?.x || 0) + node.width / 2) * viewport.k;
-    const nodeTop = viewport.y + (node.position.y + (dragOffset?.y || 0)) * viewport.k;
-    const nodeBottom = nodeTop + node.height * viewport.k;
-    const below = nodeBottom + 10;
-    const above = nodeTop - height - 10;
-    const placement = below + height > bounds.bottom && above >= bounds.top ? "above" : "below";
-    return {
-        left: Math.min(Math.max(center - width / 2, bounds.left), bounds.right - width),
-        top: Math.min(Math.max(placement === "above" ? above : below, bounds.top), bounds.bottom - height),
-        placement,
-    };
 }

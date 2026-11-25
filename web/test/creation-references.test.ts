@@ -73,6 +73,14 @@ describe("creation references", () => {
         expect(creationUploadAccept("text")).toContain(".docx");
     });
 
+    test("音频创作独立接受音频文件并拒绝其他参考类型", () => {
+        expect(creationFileAccepted("audio", { name: "voice.mp3", type: "audio/mpeg" })).toBe(true);
+        expect(creationFileAccepted("audio", { name: "cover.png", type: "image/png" })).toBe(false);
+        expect(creationUploadAccept("audio")).toBe("audio/*");
+        expect(creationUploadAccept("video", true)).toBe("image/*,video/*");
+        expect(creationFileAccepted("video", { name: "voice.mp3", type: "audio/mpeg" }, true)).toBe(false);
+    });
+
     test("文档附件会作为文本资源参与引用", () => {
         const attachment: CreationAttachment = { id: "document", name: "script.pdf", type: "application/pdf", url: "https://example.com/script.pdf", storageKey: "resource:document", bytes: 1024, previewUrl: "" };
         const [reference] = buildCreationMentionReferences([], [attachment]);

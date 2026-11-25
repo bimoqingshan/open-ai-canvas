@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { avoidCanvasNodePanels, canvasNodePanelBounds, canvasOverlayBounds, canvasToolbarLayoutLevel, placeCanvasNodePanel, subscribeCanvasNodePanelBounds, updateCanvasNodePanelBounds } from "@/lib/canvas/canvas-overlay-layout";
+import { avoidCanvasNodePanels, canvasNodePanelBounds, canvasNodeToolbarAnchor, canvasOverlayBounds, canvasToolbarLayoutLevel, subscribeCanvasNodePanelBounds, updateCanvasNodePanelBounds } from "@/lib/canvas/canvas-overlay-layout";
+import { getNodePanelPosition } from "@/components/canvas/canvas-workspace-overlays";
 import { CanvasNodeType, type CanvasNodeData } from "@/types/canvas";
 
 const image: CanvasNodeData = { id: "image", title: "Image", type: CanvasNodeType.Image, position: { x: 20, y: 500 }, width: 180, height: 160 };
@@ -43,30 +44,21 @@ describe("canvas floating overlay layout", () => {
         updateCanvasNodePanelBounds(container, panel, null);
     });
 
-    test("bottom-edge image editor stays above the dock and outside the workspace rail", () => {
-        const bounds = canvasOverlayBounds({ width: 1024, height: 720 }, { left: 76, top: 64, bottom: 626 });
-        const position = placeCanvasNodePanel(image, { x: 0, y: 0, k: 1 }, bounds, { width: 680, height: 238 });
-        expect(position.placement).toBe("above");
-        expect(position.left).toBeGreaterThanOrEqual(76);
-        expect(position.left + 680).toBeLessThanOrEqual(1012);
-        expect(position.top).toBeGreaterThanOrEqual(64);
-        expect(position.top + 238).toBeLessThanOrEqual(626);
+    test("node panels stay below every node even when the canvas bottom is crowded", () => {
+        const position = getNodePanelPosition(image, { x: 0, y: 0, k: 1 }, { width: 1024, height: 720 }, 680);
+        expect(position).toEqual({ left: 12, top: 670, placement: "below" });
     });
 
-    test("oversized editor is anchored to the usable area in a narrow short viewport", () => {
-        const bounds = canvasOverlayBounds({ width: 320, height: 320 }, { left: 76, top: 64, bottom: 244 });
-        const position = placeCanvasNodePanel(image, { x: -200, y: 100, k: 2 }, bounds, { width: 680, height: 540 });
-        expect(position.left).toBe(76);
-        expect(position.top).toBe(64);
-        expect(bounds.right - bounds.left).toBe(232);
-        expect(bounds.bottom - bounds.top).toBe(180);
-    });
-
-    test("roomy viewport keeps the below-node anchor and follows live drag and zoom", () => {
-        const bounds = canvasOverlayBounds({ width: 1920, height: 1080 });
+    test("node panel keeps its below-node anchor while the node moves and the canvas zooms", () => {
         const source = { ...image, position: { x: 400, y: 100 } };
-        const position = placeCanvasNodePanel(source, { x: 40, y: 20, k: 1.5 }, bounds, { width: 680, height: 238 }, { x: 20, y: 10 });
+        const position = getNodePanelPosition(source, { x: 40, y: 20, k: 1.5 }, { width: 1920, height: 1080 }, 680, { x: 20, y: 10 });
         expect(position).toEqual({ left: 465, top: 435, placement: "below" });
+    });
+
+    test("node toolbar stays above its node without panel or vertical-edge avoidance", () => {
+        const bounds = canvasOverlayBounds({ width: 1024, height: 720 }, { left: 76, top: 64, bottom: 626 });
+        const position = canvasNodeToolbarAnchor(image, { x: 0, y: 0, k: 1 }, bounds, 300);
+        expect(position).toEqual({ left: 226, top: 470 });
     });
 
     test("toolbar folds against actual available width and unfolds only when measured content fits", () => {

@@ -1,5 +1,5 @@
 import { Button } from "antd";
-import { Copy, ExternalLink, Heart, Pencil, Trash2, ArrowUpRight } from "lucide-react";
+import { ArrowRight, Copy, ExternalLink, Heart, Pencil, Trash2 } from "lucide-react";
 import { useState } from "react";
 
 import { Tooltip } from "@/components/ui/base/tooltip";
@@ -136,7 +136,7 @@ export function InspirationDetailModal({
                             <Button onClick={onClose}>关闭</Button>
                             <Button
                                 type="primary"
-                                icon={<ArrowUpRight className="size-4" />}
+                                icon={<ArrowRight className="size-4" />}
                                 onClick={() => {
                                     setUsingPrompt(true);
                                     onClose();

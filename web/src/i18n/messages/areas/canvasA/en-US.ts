@@ -45,7 +45,7 @@ export const enUS: DeepStringRecord<typeof zhCN> = {
         title: "Add node",
         nodesGroup: "Creation nodes",
         commandWithBadge: "{{label}} ({{badge}})",
-        footerGroup: "Workflows and imports",
+        resourceGroup: "Import resources",
     },
     audioPlayer: {
         defaultTitle: "Audio",

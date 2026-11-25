@@ -134,6 +134,14 @@ func protocolRequestFromInput(input canvasGenerationInput) protocol.GenerationRe
 			delete(request.ProviderOptions, input.Config.InterfaceType)
 		}
 	}
+	if input.Mode == "audio" && input.Config.InterfaceType != "" && input.Config.AudioInstrumental != "" {
+		options := make(map[string]any)
+		for name, value := range request.ProviderOptions[input.Config.InterfaceType] {
+			options[name] = value
+		}
+		options["instrumental"] = input.Config.AudioInstrumental == "true"
+		request.ProviderOptions[input.Config.InterfaceType] = options
+	}
 	return request
 }
 

@@ -23,6 +23,9 @@ func TestFeatureAvailabilityDefaultsToDisableFrontendModels(t *testing.T) {
 	if setting.TeamsEnabled || setting.EcommerceEnabled || setting.EcommerceVideoEnabled {
 		t.Fatalf("new features must default to disabled: %#v", setting)
 	}
+	if !setting.AssetsEnabled {
+		t.Fatal("assets should be enabled by default")
+	}
 	if !setting.WelcomeEnabled {
 		t.Fatal("welcome should be enabled by default")
 	}
@@ -42,7 +45,7 @@ func TestFeatureAvailabilityLegacySettingKeepsCustomChannelsEnabled(t *testing.T
 	if err != nil {
 		t.Fatal(err)
 	}
-	if setting.ShortDramaEnabled || !setting.CustomChannelsEnabled || setting.FrontendModelsEnabled || !setting.PluginCenterEnabled || !setting.SystemPluginsVisibleToUsers {
+	if setting.ShortDramaEnabled || !setting.CustomChannelsEnabled || setting.FrontendModelsEnabled || !setting.PluginCenterEnabled || !setting.SystemPluginsVisibleToUsers || !setting.AssetsEnabled {
 		t.Fatalf("FeatureAvailability() = %#v", setting)
 	}
 	if setting.TeamsEnabled || setting.EcommerceEnabled || setting.EcommerceVideoEnabled {
@@ -101,6 +104,28 @@ func TestUpdateFeatureAvailabilityPersistsAndAudits(t *testing.T) {
 	}
 	if auditCount != 1 {
 		t.Fatalf("audit count = %d, want 1", auditCount)
+	}
+}
+
+func TestAssetsFeatureCanBeDisabledAndReenabled(t *testing.T) {
+	svc, _ := newFeatureAvailabilityTestService(t)
+	actor := &model.User{ID: "admin-assets", Role: model.UserRoleAdmin}
+	for _, enabled := range []bool{false, true} {
+		value := platform.DefaultFeatureAvailability()
+		value.AssetsEnabled = enabled
+		if _, err := svc.UpdateFeatureAvailability(actor, value); err != nil {
+			t.Fatal(err)
+		}
+		setting, err := svc.FeatureAvailability()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if setting.AssetsEnabled != enabled {
+			t.Fatalf("assetsEnabled = %v, want %v", setting.AssetsEnabled, enabled)
+		}
+		if err := svc.RequireFeature(FeatureAssets); (enabled && err != nil) || (!enabled && err == nil) {
+			t.Fatalf("RequireFeature(assets), enabled=%v, error=%v", enabled, err)
+		}
 	}
 }
 

@@ -5,7 +5,7 @@ import { App, Button } from "antd";
 import { appQueryClient } from "@/lib/query-client";
 import { sameAgentRequestTarget, type AgentRequestTarget } from "@/lib/agent-page-context";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { EyeOff, FileText, ImagePlus, MoveDiagonal2, X } from "lucide-react";
+import { EyeOff, FileText, ImagePlus, X } from "lucide-react";
 import { canvasNodeMentionToken } from "@/lib/canvas/canvas-resource-references";
 import { observeCanvasGestureActive } from "@/lib/canvas/canvas-live-viewport";
 import { CANVAS_IMAGE_ASSET_DND_TYPE } from "@/lib/canvas/canvas-asset-dnd";
@@ -2552,17 +2552,6 @@ export const CanvasCloudAgentPanel = memo(function CanvasCloudAgentPanel() {
                             <>
                                 <div data-agent-resize="north" className="absolute inset-x-5 top-0 z-10 hidden h-2 cursor-n-resize touch-none sm:block" />
                                 <div data-agent-resize="west" className="absolute bottom-5 left-0 top-5 z-10 hidden w-2 cursor-w-resize touch-none sm:block" />
-                                <button
-                                    type="button"
-                                    aria-label="调整 Agent 面板大小"
-                                    title="拖动调整宽高，也可用方向键调整"
-                                    data-agent-resize="northwest"
-                                    className="agent-panel-resize-corner absolute left-1 top-2 z-10 hidden size-5 cursor-nw-resize touch-none place-items-center rounded-md opacity-60 transition-opacity hover:opacity-100 focus-visible:outline focus-visible:outline-2 sm:grid"
-                                    onKeyDown={panelLayout.onResizeKeyDown}
-                                    style={{ color: theme.node.muted }}
-                                >
-                                    <MoveDiagonal2 className="size-3" aria-hidden="true" />
-                                </button>
                             </>
                         )}
                         <AnimatePresence mode="wait" initial={false}>

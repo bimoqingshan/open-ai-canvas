@@ -61,19 +61,19 @@ describe("workspace route loading", () => {
         expect(calls).toBe(1);
     });
 
-    test("keeps the creation page at root and preserves the create compatibility route", () => {
+    test("keeps the studio home at root and preserves the create route", () => {
         const router = source("../src/router.tsx");
         const navigation = source("../src/components/layout/workspace-sidebar-nav.tsx");
 
-        expect(router).toContain('{ path: "/", element: deferred(<CreatePage />) }');
+        expect(router).toContain('{ path: "/", element: deferred(<StudioHomePage />) }');
         expect(router).toContain('{ path: "/create", element: deferred(<CreatePage />) }');
         expect(router).toContain("<RequireAuth allowAnonymous={isGuestWorkspacePath(pathname)}>");
-        expect(router).toContain('{ path: "/assets", element: <RequireAuth>{deferred(<AssetsPage />)}</RequireAuth> }');
+        expect(router).toMatch(/path: "\/assets",\s+element: \(\s+<RequireAuth>\s+<RequireFeature feature="assetsEnabled">\{deferred\(<AssetsPage \/>\)\}<\/RequireFeature>\s+<\/RequireAuth>\s+\),/);
         expect(router).toMatch(/path: "\/canvas\/:id",\s+element: \(\s+<RequireAuth>\s+<CanvasProjectPage \/>\s+<\/RequireAuth>\s+\),/);
         expect(router).not.toContain('path: "/home"');
-        expect(router).not.toContain("HomePage");
-        expect(navigation).toContain('{ ...toolItem("create", "/", t), id: "home", title: t("nav.sidebar.home") }');
-        expect(navigation).not.toContain('to: "/create"');
+        expect(router).not.toContain("deferred(<HomePage />)");
+        expect(navigation).toContain('{ ...toolItem("create", "/", t), id: "home", title: t("shell.palette.home") }');
+        expect(navigation).toContain('title: t("nav.sidebar.inspirations"), icon: Sparkles, to: "/create"');
         expect(navigation).not.toContain('to: "/home"');
     });
 

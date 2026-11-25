@@ -1,6 +1,6 @@
 // 当前镜头的媒体核查与引用来源；复用画布媒体、批次和 AntD 控件，明暗样式由 workspace/text/status token 提供。
 import { Button } from "antd";
-import { ArrowUpRight, Film, Image as ImageIcon, Link2, Play, RefreshCw } from "lucide-react";
+import { ArrowRight, Film, Image as ImageIcon, Link2, Play, RefreshCw } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 import { CachedResourceImage } from "@/components/cached-resource-image";
@@ -248,7 +248,7 @@ function ShotOutput({
                     )
                 ) : null}
                 {node ? (
-                    <Button size="small" type="text" icon={<ArrowUpRight />} onClick={() => onFocusOutput(node.id)}>
+                    <Button size="small" type="text" icon={<ArrowRight />} onClick={() => onFocusOutput(node.id)}>
                         {readOnly ? "在画布中查看" : hasResult ? "在画布中微调" : "在画布中检查"}
                     </Button>
                 ) : null}

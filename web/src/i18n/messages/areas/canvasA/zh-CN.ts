@@ -44,7 +44,7 @@ export const zhCN = {
         title: "添加节点",
         nodesGroup: "创作节点",
         commandWithBadge: "{{label}}（{{badge}}）",
-        footerGroup: "工作流与导入资源",
+        resourceGroup: "导入资源",
     },
     audioPlayer: {
         defaultTitle: "音频",

@@ -14,8 +14,22 @@ export type UserProfile = {
 
 export type ProfileEmailTicket = { ticket: string; expiresIn: number; retryAfter: number };
 export type ProfileEmailResult = { changed: true; notificationStatus: "sent" | "failed" | "not_needed" };
+export type AccountActivityDay = { day: string; consumedMicrocredits: number; active: boolean };
+export type AccountActivity = {
+    from: string;
+    to: string;
+    days: AccountActivityDay[];
+    summary: {
+        totalConsumedMicrocredits: number;
+        dailyPeakMicrocredits: number;
+        lastSevenDaysMicrocredits: number;
+        activeDays: number;
+        longestStreak: number;
+    };
+};
 
 export const getUserProfile = (signal?: AbortSignal) => http.get<UserProfile>("/auth/profile", { signal });
+export const getAccountActivity = (signal?: AbortSignal) => http.get<AccountActivity>("/auth/profile/activity", { signal });
 
 export function uploadProfileAvatar(file: File) {
     const data = new FormData();

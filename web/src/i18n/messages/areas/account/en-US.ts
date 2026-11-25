@@ -287,6 +287,8 @@ export const enUS: DeepStringRecord<typeof zhCN> = {
                 },
             },
             tbd: "TBD",
+            chooseProduct: "Choose plan",
+            selectedProduct: "Selected",
             startsAt: "On sale {{time}}",
             ended: "Ended",
             soldOut: "Sold out",

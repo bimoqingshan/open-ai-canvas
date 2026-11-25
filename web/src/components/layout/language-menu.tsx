@@ -1,5 +1,6 @@
 import { Dropdown } from "antd";
-import { Check, ChevronDown, Languages } from "lucide-react";
+import { Check, ChevronDown, Globe2, Languages } from "lucide-react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { switchLocale } from "@/i18n";
@@ -13,10 +14,49 @@ import "./language-menu.css";
  * 界面语言入口。顶栏用图标，登录页显示当前语言。
  * 选项显示各语言自称 + 英文名，切换后整页刷新（见 switchLocale）。
  */
-export function LanguageMenu({ variant = "topbar", className }: { variant?: "topbar" | "auth"; className?: string }) {
+export function LanguageMenu({ variant = "topbar", className }: { variant?: "topbar" | "auth" | "account"; className?: string }) {
     const { t } = useTranslation();
     const locale = useLocaleStore((state) => state.locale);
     const current = SUPPORTED_LOCALES.find((item) => item.code === locale) ?? SUPPORTED_LOCALES[0];
+    const [accountMenuOpen, setAccountMenuOpen] = useState(false);
+    if (variant === "account") {
+        return (
+            <div className={cn("workspace-account-language", className)}>
+                <button
+                    type="button"
+                    className="workspace-account-language-trigger"
+                    aria-expanded={accountMenuOpen}
+                    aria-controls="workspace-account-language-options"
+                    aria-label={t("language.selectLabel")}
+                    title={t("language.selectLabel")}
+                    onClick={() => setAccountMenuOpen((open) => !open)}
+                >
+                    <Globe2 aria-hidden="true" />
+                    <span>{t("language.label")}</span>
+                    <small lang={current.code}>{current.label}</small>
+                    <ChevronDown aria-hidden="true" />
+                </button>
+                <div id="workspace-account-language-options" className="workspace-account-language-options" role="group" aria-label={t("language.selectLabel")} hidden={!accountMenuOpen}>
+                    {SUPPORTED_LOCALES.map((item) => (
+                        <button
+                            key={item.code}
+                            type="button"
+                            lang={item.code}
+                            aria-pressed={locale === item.code}
+                            onClick={() => {
+                                setAccountMenuOpen(false);
+                                switchLocale(item.code);
+                            }}
+                        >
+                            <Globe2 aria-hidden="true" />
+                            <span>{item.label}</span>
+                            {locale === item.code ? <Check aria-hidden="true" /> : null}
+                        </button>
+                    ))}
+                </div>
+            </div>
+        );
+    }
     return (
         <Dropdown
             trigger={["click"]}

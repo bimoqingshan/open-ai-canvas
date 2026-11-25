@@ -110,3 +110,11 @@ describe("首页创作恢复监听范围", () => {
         expect(pendingCreationTaskIds(stored)).toEqual(["task-pending", "task-sync", "task-legacy", "task-recoverable"]);
     });
 });
+
+describe("外部音频结果恢复", () => {
+    test("已完成但缺少音频地址的任务继续进入结果恢复监听", () => {
+        const failed = assistant({ mode: "audio", status: "error", errorKind: "task", error: "任务成功但没有返回音频 URL" });
+        expect(creationMessageNeedsResultSync(failed)).toBe(true);
+        expect(pendingCreationTaskIds(conversations(failed))).toEqual(["task-1"]);
+    });
+});

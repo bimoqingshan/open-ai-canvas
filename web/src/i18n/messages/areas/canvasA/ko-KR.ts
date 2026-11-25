@@ -45,7 +45,7 @@ export const koKR: DeepStringRecord<typeof zhCN> = {
         title: "노드 추가",
         nodesGroup: "제작 노드",
         commandWithBadge: "{{label}} ({{badge}})",
-        footerGroup: "워크플로 및 가져오기",
+        resourceGroup: "리소스 가져오기",
     },
     audioPlayer: {
         defaultTitle: "오디오",

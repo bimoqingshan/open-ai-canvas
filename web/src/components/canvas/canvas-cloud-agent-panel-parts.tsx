@@ -20,7 +20,7 @@ import { Live2DAvatar } from "./live2d-avatar";
 import { agentAvatarBundleFileURL, live2DModelURL } from "@/services/api/appearance";
 import { AgentAvatarVideo } from "@/components/canvas/agent-avatar-video";
 import { AgentOrb, agentOrbStateForAvatar } from "@/components/ui/agent-orb";
-import { ArrowDown, Brain, Check, ChevronDown, Clapperboard, Download, Ellipsis, LoaderCircle, Maximize2, MessageSquarePlus, Minus, PanelRight, PictureInPicture2, Scaling, Settings2, ShieldCheck, X, Blocks } from "lucide-react";
+import { ArrowDown, Brain, Check, ChevronDown, Download, Ellipsis, LoaderCircle, Maximize2, MessageSquarePlus, Minus, PanelRight, PictureInPicture2, Scaling, Settings2, ShieldCheck, X, Blocks } from "lucide-react";
 import { agentModifierShortcut } from "@/lib/canvas/agent-outbox";
 import { Button, Input, Popover } from "antd";
 import { CanvasAnchoredDropdown as Dropdown } from "./canvas-anchored-dropdown";
@@ -329,9 +329,6 @@ export function AgentHeader({
         <header data-agent-drag-handle className="agent-panel-header flex shrink-0 items-center gap-3">
             <div className="min-w-0 flex-1">
                 <button type="button" className="agent-panel-title-button" onClick={onHistory} aria-label={`历史对话，当前：${title}`} title="切换历史对话">
-                    <span className="agent-panel-mark" aria-hidden="true">
-                        <Clapperboard className="size-4" />
-                    </span>
                     <span className="agent-panel-title">{title}</span>
                     <ChevronDown className="size-3.5 shrink-0" aria-hidden="true" />
                 </button>

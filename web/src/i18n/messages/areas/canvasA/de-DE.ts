@@ -45,7 +45,7 @@ export const deDE: DeepStringRecord<typeof zhCN> = {
         title: "Knoten hinzufügen",
         nodesGroup: "Erstellungsknoten",
         commandWithBadge: "{{label}} ({{badge}})",
-        footerGroup: "Workflows und Importe",
+        resourceGroup: "Ressourcen importieren",
     },
     audioPlayer: {
         defaultTitle: "Audio",

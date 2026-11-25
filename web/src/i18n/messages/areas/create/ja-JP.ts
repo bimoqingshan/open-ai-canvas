@@ -1,7 +1,10 @@
 import type { DeepStringRecord } from "../../zh-CN";
 import type { zhCN } from "./zh-CN";
+import { enUS } from "./en-US";
 
 export const jaJP: DeepStringRecord<typeof zhCN> = {
+    home: enUS.home,
+    composer: enUS.composer,
     historySync: {
         manage: "履歴のコピーを確認（{{count}}）",
         backupsTitle: "履歴の競合コピー",
@@ -58,6 +61,7 @@ export const jaJP: DeepStringRecord<typeof zhCN> = {
     status: {
         videoGenerated: "動画を生成しました",
         imageGenerated: "画像を生成しました",
+        audioGenerated: "音声を生成しました",
         imagesPartiallyGenerated: "{{done}} 枚の画像を生成、{{failed}} 枚が失敗",
         stopped: "停止しました",
         failed: "生成に失敗しました",
@@ -70,6 +74,7 @@ export const jaJP: DeepStringRecord<typeof zhCN> = {
     library: {
         unsupportedKind: "この種類の素材はまだ参照として使用できません",
         imageOnly: "画像作成では参考画像のみ使用できます",
+        audioOnly: "音声作成では参考音声のみ使用できます",
         videoModelNoVideo: "現在の動画モデルは参照動画に対応していません",
         videoModelNoAudio: "現在の動画モデルは参照音声に対応していません",
         videoModelNoImage: "現在の動画モデルは参考画像に対応していません",
@@ -103,11 +108,13 @@ export const jaJP: DeepStringRecord<typeof zhCN> = {
         text: "テキスト",
         image: "画像",
         video: "動画",
+        audio: "音声",
     },
     shotScript: {
         text: "制作メモ",
         image: "画面指示",
         video: "ショット台本",
+        audio: "音声スクリプト",
     },
     ratio: {
         square: "正方形",
@@ -206,6 +213,8 @@ export const jaJP: DeepStringRecord<typeof zhCN> = {
         imagesPartiallyGenerated: "{{done}} 枚の画像を生成、{{failed}} 枚の生成に失敗",
         noVideoResult: "タスクから動画が返されませんでした",
         videoResultUnavailable: "動画の結果を利用できません",
+        noAudioResult: "タスクから音声が返されませんでした",
+        audioResultUnavailable: "音声の結果を利用できません",
         handoffAssetsPending: "一部の生成素材はまだ保存中です。しばらくしてからキャンバスへ移動してください。",
         handoffSyncPending: "会話はこの端末に保存されました。クラウド同期はまだ完了していません。",
         handoffFailed: "キャンバスへ移動できませんでした。元の会話は保持されています",
@@ -233,6 +242,7 @@ export const jaJP: DeepStringRecord<typeof zhCN> = {
         uploadHintText: "画像、動画、音声、一般的な文書に対応。メディアはライブラリに保存されます",
         uploadHintVideo: "画像、動画、音声に対応。アップロード後ライブラリに保存されます",
         uploadHintImage: "画像に対応。アップロード後ライブラリに保存されます",
+        uploadHintAudio: "音声に対応。アップロード後ライブラリに保存されます",
         uploadHintEagle: "現在の Eagle フォルダに書き込みます。Eagle は現在画像ファイルのみ対応しています",
     },
 };

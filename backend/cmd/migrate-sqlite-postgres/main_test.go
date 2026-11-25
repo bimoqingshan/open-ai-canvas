@@ -12,9 +12,17 @@ import (
 )
 
 func TestMigrationListCoversSchemaModels(t *testing.T) {
-	want := make(map[string]bool, len(database.Models()))
+	linghuaModels := []any{&model.CommunityWork{}, &model.CommunityCategory{}, &model.CreatorChallenge{}, &model.HomeCarouselSetting{}, &model.NavigationMenuItem{}, &model.LearningSquareSetting{}}
+	want := make(map[string]bool, len(database.Models())+len(linghuaModels))
 	cache := &sync.Map{}
 	for _, value := range database.Models() {
+		parsed, err := schema.Parse(value, cache, schema.NamingStrategy{})
+		if err != nil {
+			t.Fatal(err)
+		}
+		want[parsed.Table] = false
+	}
+	for _, value := range linghuaModels {
 		parsed, err := schema.Parse(value, cache, schema.NamingStrategy{})
 		if err != nil {
 			t.Fatal(err)

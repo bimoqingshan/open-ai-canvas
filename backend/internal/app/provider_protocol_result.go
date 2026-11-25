@@ -94,7 +94,7 @@ func finishProtocolResult(ctx context.Context, config providerConfig, mode strin
 	case "video":
 		output = map[string]interface{}{"mode": "video", "video": items[0]}
 	default:
-		output = map[string]interface{}{"mode": "audio", "audio": items[0]}
+		output = map[string]interface{}{"mode": "audio", "audios": items}
 	}
 	attachProtocolUsage(output, mode, result)
 	return output, nil

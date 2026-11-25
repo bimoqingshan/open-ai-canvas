@@ -14,7 +14,7 @@ describe("canvas theme ownership", () => {
         const css = await Bun.file(new URL("../src/styles/globals.css", import.meta.url)).text();
         expect(css.match(/--background:\s*(#[a-f0-9]+);/i)?.[1].toUpperCase()).toBe("#FFFFFF");
         expect(css).toContain("--user-page-bg: var(--background)");
-        expect(css).not.toContain("--workspace-canvas: #f4f4f5");
+        expect(css).toContain("--workspace-canvas: #f4f4f5");
         expect(css).toContain("--background: #0f0f11");
         expect(css).toContain("--user-page-bg: #151517");
     });

@@ -1,5 +1,5 @@
 import { Button } from "antd";
-import { ArrowUpRight, Clapperboard, Image as ImageIcon, Layers3, ListChecks, RefreshCw, ShoppingBag } from "lucide-react";
+import { ArrowRight, Clapperboard, Image as ImageIcon, Layers3, ListChecks, RefreshCw, ShoppingBag } from "lucide-react";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router";
 import { getAdminFeatureAvailability } from "@/services/api/auth";
@@ -120,7 +120,7 @@ export default function EcommerceAgentConfigPage() {
                                 <div className="eac-readiness-actions">
                                     <AdminStatusBadge label={row.ready ? "已就绪" : row.required ? "未完成" : "未开启"} tone={row.ready ? "success" : row.required ? "warning" : "neutral"} />
                                     {row.ready ? null : (
-                                        <Button size="small" icon={<ArrowUpRight className="size-3.5" />} iconPlacement="end" onClick={row.action.run}>
+                                        <Button size="small" icon={<ArrowRight className="size-3.5" />} iconPlacement="end" onClick={row.action.run}>
                                             {row.action.label}
                                         </Button>
                                     )}

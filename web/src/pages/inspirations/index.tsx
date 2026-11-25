@@ -9,11 +9,13 @@ import { SegmentedControl } from "@/components/ui/base/segmented-control";
 import { Select } from "@/components/ui/base/select";
 import { Tooltip } from "@/components/ui/base/tooltip";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { useQuery } from "@tanstack/react-query";
 import { catalogIdOf, inspirationSourceOf, inspirationSources, type CreationInspiration, type InspirationSourceId } from "@/lib/inspirations/catalog";
 import { isFreshInspiration, localDayKey, orderInspirationsByLatest, orderInspirationsForToday } from "@/lib/inspirations/daily-order";
 import { isCustomInspiration, resolveInspirations } from "@/lib/inspirations/resolve";
 import { loadInspirationCatalog, type InspirationCatalog } from "@/services/inspiration-catalog";
 import { useInspirationStore } from "@/stores/use-inspiration-store";
+import { getPublicLearningSquareConfig } from "@/services/api/home-carousel";
 import { useUserStore } from "@/stores/use-user-store";
 import { InspirationCover, InspirationDetailModal } from "./inspiration-detail-modal";
 import { InspirationEditorModal, type InspirationCategoryChoice } from "./inspiration-editor-modal";
@@ -69,6 +71,8 @@ function downloadText(text: string, fileName: string) {
 export function InspirationHall({ onUse }: { onUse: (item: CreationInspiration) => void }) {
     const { message, modal } = App.useApp();
     const inspirationSourcesVisible = useUserStore((state) => state.features.inspirationSourcesVisible);
+    const learningSquareQuery = useQuery({ queryKey: ["public-learning-square"], queryFn: getPublicLearningSquareConfig, staleTime: 0 });
+    const learningSquare = learningSquareQuery.data?.learningSquare;
 
     const custom = useInspirationStore((state) => state.custom);
     const overrides = useInspirationStore((state) => state.overrides);
@@ -151,7 +155,11 @@ export function InspirationHall({ onUse }: { onUse: (item: CreationInspiration) 
     }, [source, modeFilter, category, view, sort, debouncedSearch, pageSize, dayKey]);
 
     const overlay = useMemo(() => ({ custom, overrides, hidden }), [custom, hidden, overrides]);
-    const resolved = useMemo(() => (catalog ? resolveInspirations(catalog.entries, overlay) : []), [catalog, overlay]);
+    const resolved = useMemo(() => {
+        if (!catalog) return [];
+        const allowedSources = new Set(learningSquare?.visibleSources ?? SOURCE_ORDER);
+        return resolveInspirations(catalog.entries, overlay).filter((item) => allowedSources.has(item.sourceId ?? "original"));
+    }, [catalog, learningSquare?.visibleSources, overlay]);
 
     /** 隐藏态在合成结果里已经滤掉了，单独还原一份给「已隐藏」视图。 */
     const hiddenItems = useMemo(() => {
@@ -202,7 +210,7 @@ export function InspirationHall({ onUse }: { onUse: (item: CreationInspiration) 
 
     /** 图片 / 视频 / 文本是库里的两大主类（文本较少），按当前视图与来源统计数量。 */
     const modeCounts = useMemo(() => {
-        const counts: Record<ModeFilter, number> = { all: 0, image: 0, video: 0, text: 0 };
+        const counts: Record<ModeFilter, number> = { all: 0, image: 0, video: 0, audio: 0, text: 0 };
         const pool = view === "hidden" ? hiddenItems : resolved;
         const favoriteSet = new Set(favorites);
         for (const item of pool) {
@@ -366,12 +374,14 @@ export function InspirationHall({ onUse }: { onUse: (item: CreationInspiration) 
         setSearch("");
     };
 
+    if (learningSquare?.enabled === false) return null;
+
     return (
         <section ref={sectionRef} id="creation-inspirations" className="inspiration-hall" aria-labelledby="inspiration-hall-title">
             <header className="inspiration-hall-header">
                 <div>
-                    <h2 id="inspiration-hall-title">灵感大厅</h2>
-                    <p>每天换一批推荐，新上架的排在前面。点开查看完整提示词，用喜欢的创意继续创作。</p>
+                    <h2 id="inspiration-hall-title">{learningSquare?.title || "灵感大厅"}</h2>
+                    <p>{learningSquare?.description || "每天换一批推荐，新上架的排在前面。点开查看完整提示词，用喜欢的创意继续创作。"}</p>
                 </div>
                 <div className="inspiration-hall-actions">
                     <Button

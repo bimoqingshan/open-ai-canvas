@@ -1,0 +1,298 @@
+.canvas-community-publish-modal .ant-modal-container {
+    max-height: calc(100svh - 24px);
+    overflow: hidden;
+    background: var(--card);
+    color: var(--foreground);
+}
+
+.canvas-community-publish-modal .ant-modal-body {
+    max-height: calc(100svh - 106px);
+    overflow-y: auto;
+}
+
+.community-publish-form {
+    padding: 0 2px 4px;
+}
+
+.community-publish-intro {
+    margin: 0 0 18px;
+    color: var(--muted-foreground);
+    font-size: 13px;
+}
+
+.community-publish-status {
+    display: flex;
+    min-height: 260px;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 12px;
+    padding: 28px;
+    text-align: center;
+}
+
+.community-publish-status-icon {
+    display: grid;
+    width: 42px;
+    height: 42px;
+    place-items: center;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--success, #16a34a) 14%, transparent);
+    color: var(--success, #16a34a);
+}
+
+.community-publish-status-icon svg {
+    width: 22px;
+    height: 22px;
+}
+
+.community-publish-status h2 {
+    margin: 0;
+    color: var(--foreground);
+    font-size: 18px;
+}
+
+.community-publish-status p,
+.community-publish-rejected {
+    margin: 0;
+    color: var(--muted-foreground);
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+.community-publish-status-actions {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.community-publish-status-actions a {
+    color: inherit;
+}
+
+.community-publish-rejected {
+    margin: -4px 0 4px;
+    color: var(--destructive);
+}
+
+.community-publish-grid {
+    display: grid;
+    grid-template-columns: minmax(220px, 0.85fr) minmax(0, 1.35fr);
+    gap: 22px;
+}
+
+.community-publish-uploads,
+.community-publish-fields {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.community-publish-label {
+    display: flex;
+    min-height: 20px;
+    align-items: center;
+    gap: 8px;
+    color: var(--foreground);
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.community-publish-label span {
+    color: var(--muted-foreground);
+    font-size: 11px;
+    font-weight: 400;
+}
+
+.community-publish-label b {
+    color: var(--destructive);
+    font-weight: 500;
+}
+
+.community-upload-tile {
+    position: relative;
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 10px;
+    overflow: hidden;
+    border: 1px dashed var(--border);
+    border-radius: 7px;
+    padding: 12px;
+    background: color-mix(in srgb, var(--card) 88%, var(--foreground) 12%);
+    color: var(--muted-foreground);
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.community-upload-tile:hover {
+    border-color: var(--ring);
+    color: var(--foreground);
+}
+
+.community-upload-tile > svg {
+    width: 24px;
+    height: 24px;
+}
+
+.community-upload-video,
+.community-upload-cover {
+    aspect-ratio: 16 / 9;
+}
+
+.community-upload-video video,
+.community-upload-cover img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    background: var(--muted);
+}
+
+.community-upload-video > span {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    max-width: 100%;
+    overflow: hidden;
+    border-radius: 5px;
+    padding: 5px 8px;
+    background: color-mix(in srgb, var(--card) 86%, transparent);
+    color: var(--foreground);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.community-upload-video > span svg,
+.community-upload-progress svg {
+    width: 14px;
+    height: 14px;
+    flex: 0 0 14px;
+}
+
+.community-upload-progress {
+    position: absolute;
+    right: 8px;
+    bottom: 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    border-radius: 5px;
+    padding: 4px 7px;
+    background: color-mix(in srgb, var(--card) 88%, transparent);
+    color: var(--foreground);
+    font-size: 11px;
+}
+
+.community-publish-fields > .ant-input,
+.community-publish-fields > .ant-input-affix-wrapper,
+.community-publish-fields textarea.ant-input {
+    min-width: 0;
+}
+
+.community-publish-project-select {
+    display: grid;
+    min-width: 0;
+    gap: 6px;
+}
+
+.community-publish-project-select .ant-select {
+    width: 100%;
+}
+
+.community-publish-selects {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.community-publish-selects label {
+    display: grid;
+    min-width: 0;
+    gap: 6px;
+}
+
+.community-publish-selects .ant-select {
+    width: 100%;
+}
+
+.community-publish-toggle {
+    display: flex;
+    min-height: 44px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    border-block: 1px solid var(--border);
+    padding: 7px 0;
+}
+
+.community-publish-toggle > div {
+    display: grid;
+    gap: 3px;
+}
+
+.community-publish-toggle strong {
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.community-publish-toggle span {
+    color: var(--muted-foreground);
+    font-size: 11px;
+}
+
+.community-publish-terms {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0 3px;
+    color: var(--muted-foreground);
+    font-size: 11px;
+}
+
+.community-publish-terms .ant-btn-link {
+    padding-inline: 2px;
+    font-size: 11px;
+}
+
+.community-publish-actions {
+    display: flex;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding-top: 2px;
+}
+
+@media (max-width: 640px) {
+    .canvas-community-publish-modal .ant-modal {
+        max-width: calc(100vw - 16px);
+        margin-inline: 8px;
+    }
+
+    .canvas-community-publish-modal .ant-modal-body {
+        max-height: calc(100svh - 92px);
+    }
+
+    .community-publish-grid {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 14px;
+    }
+
+    .community-publish-uploads {
+        display: grid;
+        grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+        align-items: start;
+        gap: 10px;
+    }
+
+    .community-publish-uploads > div {
+        min-width: 0;
+    }
+}

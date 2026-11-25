@@ -1,6 +1,6 @@
 import { memo, useMemo, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowUpRight, ChevronDown, ChevronLeft, ChevronRight, Clapperboard, Film, Image as ImageIcon, LayoutGrid, LoaderCircle, LocateFixed, Send } from "lucide-react";
+import { ArrowRight, ChevronDown, ChevronLeft, ChevronRight, Clapperboard, Film, Image as ImageIcon, LayoutGrid, LoaderCircle, LocateFixed, Send } from "lucide-react";
 import { Link } from "react-router";
 
 import { CachedResourceImage } from "@/components/cached-resource-image";
@@ -148,7 +148,7 @@ export const CanvasDramaSidebar = memo(function CanvasDramaSidebar({ summary, ca
                 <Link to={studioPath} className="canvas-project-sidebar-assets-button flex h-9 w-full items-center gap-2 rounded-md border border-border/45 px-2 text-xs text-foreground/65">
                     <Clapperboard className="size-3.5 text-foreground/42" />
                     <span className="flex-1 text-left">打开短剧制作台</span>
-                    <ArrowUpRight className="size-3.5 text-foreground/42" />
+                    <ArrowRight className="size-3.5 text-foreground/42" />
                 </Link>
             </footer>
         </aside>

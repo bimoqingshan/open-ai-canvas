@@ -16,6 +16,7 @@ export type CanvasAudioSettingKey =
     | "audioLanguage"
     | "audioDialect"
     | "audioInstructions"
+    | "instrumental"
     | "audioEmotionControlMethod"
     | "audioEmotionRandom"
     | "audioEmotionHappy"

@@ -6,6 +6,10 @@ import { moduleGroupSource } from "./helpers/module-group-source";
 
 const projectSource = moduleGroupSource("pages/canvas/project.tsx");
 const selectionControllerSource = readFileSync(resolve(import.meta.dir, "../src/pages/canvas/use-canvas-selection-controller.ts"), "utf8");
+const nodeToolbarSource = readFileSync(resolve(import.meta.dir, "../src/components/canvas/canvas-node-toolbar.tsx"), "utf8");
+const nodePanelSource = readFileSync(resolve(import.meta.dir, "../src/components/canvas/canvas-workspace-overlays.tsx"), "utf8");
+const globalStyles = readFileSync(resolve(import.meta.dir, "../src/styles/globals.css"), "utf8");
+const nodePanelOverlaySource = nodePanelSource.slice(nodePanelSource.indexOf("export function CanvasNodePanelOverlay"), nodePanelSource.indexOf("function resolveNodePanelWidth"));
 const flat = (text: string) => text.replace(/\s+/g, " ");
 
 describe("canvas node drag overlays", () => {
@@ -27,5 +31,14 @@ describe("canvas node drag overlays", () => {
         expect(projectSource).toContain("onNodeDragEnd: handleNodeDragEnd");
         expect(projectSource).toContain("setDialogNodeId(node.id);");
         expect(selectionControllerSource).toContain("if (clickedNodeId) onNodeDragEnd?.(clickedNodeId);");
+    });
+
+    test("keeps node cards and toolbars below fixed canvas controls", () => {
+        expect(globalStyles).toContain("--z-node-overlay: 25;");
+        expect(globalStyles).toContain("--z-toolbar: 30;");
+        expect(globalStyles).toContain("--z-panel: 60;");
+        expect(nodeToolbarSource).toContain("z-[var(--z-node-overlay)]");
+        expect(nodePanelOverlaySource).toContain('const zIndex = "var(--z-node-overlay)";');
+        expect(nodePanelOverlaySource).not.toContain("z-modal-overlay");
     });
 });

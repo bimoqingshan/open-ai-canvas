@@ -60,6 +60,9 @@ export const modeLabels: Record<CreationMode, string> = {
     get video() {
         return translate("create.mode.video");
     },
+    get audio() {
+        return translate("create.mode.audio");
+    },
 };
 export const defaultCreationMode: CreationMode = "image";
 export const shotScriptLabels: Record<CreationMode, string> = {
@@ -71,6 +74,9 @@ export const shotScriptLabels: Record<CreationMode, string> = {
     },
     get video() {
         return translate("create.shotScript.video");
+    },
+    get audio() {
+        return translate("create.shotScript.audio");
     },
 };
 export const ratioOptions = [

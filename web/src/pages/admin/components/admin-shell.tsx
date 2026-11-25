@@ -147,6 +147,18 @@ const adminNavigation: AdminNavigationGroup[] = [
         ],
     },
     {
+        key: "linghua",
+        label: "Linghua 运营",
+        items: [
+            { path: "/admin/linghua/community/works", keywords: "Linghua 社区作品 视频 审核 分类", label: "社区作品", shortLabel: "作品", icon: <Inbox className="size-4" /> },
+            { path: "/admin/linghua/community/challenges", keywords: "Linghua 活动 赛事 发布 赛道", label: "活动赛事", shortLabel: "活动", icon: <Megaphone className="size-4" /> },
+            { path: "/admin/linghua/home-carousel", keywords: "Linghua 首页 Banner 轮播 推荐", label: "首页轮播", shortLabel: "轮播", icon: <Layers3 className="size-4" /> },
+            { path: "/admin/linghua/academy", keywords: "Linghua 学院 学习广场 课程 分类 章节", label: "学习广场", shortLabel: "学习", icon: <BookMarked className="size-4" /> },
+            { path: "/admin/linghua/navigation", keywords: "Linghua 新增菜单 全站 显示 隐藏 顺序", label: "个性化主菜单", shortLabel: "菜单", icon: <Rows3 className="size-4" /> },
+            { path: "/admin/linghua/contact", keywords: "Linghua 联系我们 二维码 联系卡片 客服", label: "联系我们配置", shortLabel: "联系", icon: <MessageSquareText className="size-4" /> },
+        ],
+    },
+    {
         key: "settings",
         label: "系统设置",
         items: [

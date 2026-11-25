@@ -55,7 +55,8 @@ describe("workspace sidebar storage meter", () => {
         const css = readFileSync(resolve(import.meta.dir, "../src/styles/globals.css"), "utf8");
 
         expect(sidebar).toContain("<WorkspaceSidebarStorageMeter collapsed={collapsed} />");
-        expect(sidebar.indexOf("WorkspaceSidebarStorageMeter")).toBeLessThan(sidebar.indexOf("app-workspace-sidebar-profile-row"));
+        expect(sidebar).toContain('<div className="app-workspace-sidebar-account">');
+        expect(sidebar).toContain("<WorkspaceSidebarCheckin collapsed={collapsed} />");
         expect(meter).toContain("HardDrive");
         expect(meter).toContain("app-workspace-sidebar-storage-icon");
         expect(meter).toContain('t("account.layout.storage.used", { size: meter.usedLabel })');

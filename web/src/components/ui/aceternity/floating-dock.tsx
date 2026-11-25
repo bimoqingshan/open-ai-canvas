@@ -46,6 +46,7 @@ export type FloatingDockEntry = FloatingDockCommand | FloatingDockSwitch | { kin
 type FloatingDockProps = {
     items: FloatingDockEntry[];
     size?: "default" | "compact";
+    orientation?: "horizontal" | "vertical";
     /** Bottom canvas bars scroll within the available workspace and use portaled tooltips. */
     variant?: "floating" | "toolbar";
     embedded?: boolean;
@@ -67,7 +68,7 @@ function coarsePointerQuery(): MediaQueryList | undefined {
  * 固定格子 + 纯色 hover，只保留按压反馈与提示气泡。
  */
 export const FloatingDock = forwardRef<HTMLDivElement, FloatingDockProps>(function FloatingDock(
-    { items, size = "default", variant = "floating", embedded = false, className, style, ariaLabel = translate("account.ui.canvasTools"), showLabels = false },
+    { items, size = "default", orientation = "horizontal", variant = "floating", embedded = false, className, style, ariaLabel = translate("account.ui.canvasTools"), showLabels = false },
     forwardedRef,
 ) {
     const reducedMotion = useReducedMotion();
@@ -102,17 +103,26 @@ export const FloatingDock = forwardRef<HTMLDivElement, FloatingDockProps>(functi
             aria-label={ariaLabel}
             data-dock-size={size}
             data-dock-variant={variant}
+            data-dock-orientation={orientation}
             data-canvas-wheel-scroll={toolbar || undefined}
             className={cn(
                 "aceternity-floating-dock flex items-center",
-                scrollable ? "overflow-x-auto" : "overflow-visible",
+                orientation === "vertical" ? "flex-col" : "flex-row",
+                scrollable ? (orientation === "vertical" ? "overflow-y-auto overflow-x-hidden" : "overflow-x-auto") : "overflow-visible",
                 embedded ? "gap-0.5 px-0.5 shadow-none" : "gap-0.5 border backdrop-blur-2xl",
                 !embedded && (compact ? "rounded-[var(--r-lg)] p-1" : "rounded-[var(--r-xl)] p-2"),
                 className,
             )}
             style={{ ...style, "--dock-item-size": toolbar ? `var(--button-height${coarsePointer ? "-lg" : compact ? "-sm" : ""})` : `${itemSize}px` } as CSSProperties}
         >
-            {renderDockItems(items, { compact, showLabel: showLabels, nativeTitle: scrollable && !toolbar, motionEnabled: !reducedMotion && !toolbar, portalTooltip: toolbar })}
+            {renderDockItems(items, {
+                compact,
+                showLabel: showLabels,
+                nativeTitle: scrollable && !toolbar && orientation !== "vertical",
+                motionEnabled: !reducedMotion && !toolbar,
+                portalTooltip: toolbar || orientation === "vertical",
+                tooltipPlacement: orientation === "vertical" ? "right" : "top",
+            })}
         </div>
     );
 });
@@ -123,6 +133,7 @@ type DockItemRenderProps = {
     nativeTitle: boolean;
     motionEnabled: boolean;
     portalTooltip: boolean;
+    tooltipPlacement: "top" | "right";
 };
 
 /** 连续的 danger 命令包裹在 is-danger-group 中，与常规按钮视觉隔离。 */
@@ -205,7 +216,7 @@ function useDockTooltip() {
     };
 }
 
-function DockCommandButton({ command, compact, showLabel, nativeTitle, motionEnabled, portalTooltip }: { command: FloatingDockCommand } & DockItemRenderProps) {
+function DockCommandButton({ command, compact, showLabel, nativeTitle, motionEnabled, portalTooltip, tooltipPlacement }: { command: FloatingDockCommand } & DockItemRenderProps) {
     const tooltip = useDockTooltip();
     const pressed = command.expands ? undefined : command.active;
     const expanded = command.expands ? Boolean(command.active) : undefined;
@@ -251,7 +262,7 @@ function DockCommandButton({ command, compact, showLabel, nativeTitle, motionEna
 
     return (
         <span className="relative inline-flex shrink-0">
-            <Tooltip title={portalTooltip ? command.label : undefined}>
+            <Tooltip title={portalTooltip ? command.label : undefined} placement={tooltipPlacement}>
                 <motion.button
                     type="button"
                     aria-label={command.label}
@@ -281,7 +292,7 @@ function DockCommandButton({ command, compact, showLabel, nativeTitle, motionEna
     );
 }
 
-function DockSwitch({ entry, compact, showLabel, nativeTitle, motionEnabled, portalTooltip }: { entry: FloatingDockSwitch } & DockItemRenderProps) {
+function DockSwitch({ entry, compact, showLabel, nativeTitle, motionEnabled, portalTooltip, tooltipPlacement }: { entry: FloatingDockSwitch } & DockItemRenderProps) {
     const [hoveredId, setHoveredId] = useState<string | null>(null);
     const [focusedId, setFocusedId] = useState<string | null>(null);
     const labeled = showLabel || entry.options.some((option) => option.displayLabel);
@@ -311,7 +322,7 @@ function DockSwitch({ entry, compact, showLabel, nativeTitle, motionEnabled, por
                 const showTooltip = !portalTooltip && !labeled && !nativeTitle && (hoveredId === option.id || focusedId === option.id);
                 return (
                     <span key={option.id} className="relative inline-flex shrink-0">
-                        <Tooltip title={portalTooltip ? option.label : undefined}>
+                        <Tooltip title={portalTooltip ? option.label : undefined} placement={tooltipPlacement}>
                             <button
                                 type="button"
                                 role="radio"

@@ -38,11 +38,13 @@ const legacyWorkbenchToolsMigrationChecksum = "sha256:workbench-tools-presets-v5
 const postgresSchemaMigrationLockID int64 = 73123910420260830
 
 type SchemaStatus struct {
-	Current        int64 `json:"current"`
-	Expected       int64 `json:"expected"`
-	YingceCurrent  int64 `json:"yingceCurrent"`
-	YingceExpected int64 `json:"yingceExpected"`
-	Ready          bool  `json:"ready"`
+	Current         int64 `json:"current"`
+	Expected        int64 `json:"expected"`
+	YingceCurrent   int64 `json:"yingceCurrent"`
+	YingceExpected  int64 `json:"yingceExpected"`
+	LinghuaCurrent  int64 `json:"linghuaCurrent"`
+	LinghuaExpected int64 `json:"linghuaExpected"`
+	Ready           bool  `json:"ready"`
 }
 
 type schemaMigration struct {
@@ -1268,7 +1270,10 @@ func migrateSchemaV56(tx *gorm.DB) error {
 }
 
 func MigrateSchema(db *gorm.DB) error {
-	return db.Transaction(func(tx *gorm.DB) error {
+	if err := MigrateLinghuaSchema(db); err != nil {
+		return err
+	}
+	if err := db.Transaction(func(tx *gorm.DB) error {
 		if tx.Dialector.Name() == "postgres" {
 			if err := tx.Exec("SELECT pg_advisory_xact_lock(?)", postgresSchemaMigrationLockID).Error; err != nil {
 				return fmt.Errorf("获取数据库迁移锁：%w", err)
@@ -1329,8 +1334,11 @@ func MigrateSchema(db *gorm.DB) error {
 				return err
 			}
 		}
-		return RequireSchemaVersion(tx)
-	})
+		return nil
+	}); err != nil {
+		return err
+	}
+	return RequireSchemaVersion(db)
 }
 
 // relocateLegacyOfficialMigrations recognizes only the complete released local
@@ -1410,7 +1418,7 @@ func relocateLegacyOfficialMigrations(tx *gorm.DB) error {
 }
 
 func ReadSchemaStatus(db *gorm.DB) (SchemaStatus, error) {
-	status := SchemaStatus{Expected: CurrentSchemaVersion, YingceExpected: int64(len(yingceSchemaMigrations))}
+	status := SchemaStatus{Expected: CurrentSchemaVersion, YingceExpected: int64(len(yingceSchemaMigrations)), LinghuaExpected: int64(len(linghuaSchemaMigrations))}
 	if !db.Migrator().HasTable(&schemaMigration{}) {
 		return status, nil
 	}
@@ -1421,6 +1429,11 @@ func ReadSchemaStatus(db *gorm.DB) (SchemaStatus, error) {
 	if hasYingceMigrations {
 		if err := db.Model(&yingceSchemaMigration{}).Select("COALESCE(MAX(version), 0)").Scan(&status.YingceCurrent).Error; err != nil {
 			return status, fmt.Errorf("读取出彩数据库结构版本：%w", err)
+		}
+	}
+	if db.Migrator().HasTable(&linghuaSchemaMigration{}) {
+		if err := db.Model(&linghuaSchemaMigration{}).Select("COALESCE(MAX(version), 0)").Scan(&status.LinghuaCurrent).Error; err != nil {
+			return status, fmt.Errorf("读取 Linghua 数据库结构版本：%w", err)
 		}
 	}
 	if status.Current != status.Expected {
@@ -1447,6 +1460,22 @@ func ReadSchemaStatus(db *gorm.DB) (SchemaStatus, error) {
 		if err := validateMigrationRecord(schemaMigration(row), item); err != nil {
 			return status, err
 		}
+	}
+	if !db.Migrator().HasTable(&linghuaSchemaMigration{}) {
+		return status, nil
+	}
+	if err := validateLinghuaMigrationRecords(db); err != nil {
+		return status, err
+	}
+	var linghuaCount int64
+	if err := db.Model(&linghuaSchemaMigration{}).Count(&linghuaCount).Error; err != nil {
+		return status, err
+	}
+	if linghuaCount != status.LinghuaExpected {
+		return status, nil
+	}
+	if status.LinghuaCurrent != status.LinghuaExpected {
+		return status, nil
 	}
 	status.Ready = true
 	return status, nil
@@ -1492,6 +1521,12 @@ func RequireSchemaVersion(db *gorm.DB) error {
 	}
 	if status.Current > status.Expected {
 		return fmt.Errorf("数据库结构版本 %d 高于程序支持的 %d，拒绝使用旧程序连接新数据库", status.Current, status.Expected)
+	}
+	if status.LinghuaCurrent < status.LinghuaExpected {
+		return fmt.Errorf("Linghua 数据库结构版本过旧：当前 %d，程序要求 %d，请先执行 migrate-schema up", status.LinghuaCurrent, status.LinghuaExpected)
+	}
+	if status.LinghuaCurrent > status.LinghuaExpected {
+		return fmt.Errorf("Linghua 数据库结构版本 %d 高于程序支持的 %d，拒绝使用旧程序连接新数据库", status.LinghuaCurrent, status.LinghuaExpected)
 	}
 	if !status.Ready {
 		return fmt.Errorf("出彩数据库迁移尚未完成，请先执行 migrate-schema up")

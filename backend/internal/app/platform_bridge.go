@@ -37,6 +37,7 @@ const (
 	FeatureVideoWorkbench        = platform.FeatureVideoWorkbench
 	FeatureEcommerce             = platform.FeatureEcommerce
 	FeatureEcommerceVideo        = platform.FeatureEcommerceVideo
+	FeatureAssets                = platform.FeatureAssets
 )
 
 type platformHost struct {

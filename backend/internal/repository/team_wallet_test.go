@@ -9,6 +9,32 @@ import (
 	"yingce/backend/internal/model"
 )
 
+func TestTeamBillingCapabilitySupported(t *testing.T) {
+	tests := []struct {
+		capability string
+		mode       string
+		scene      string
+		want       bool
+	}{
+		{"text", "token", "team_text", true},
+		{"image", "image_usage", "team_image", true},
+		{"video", "per_second", "team_video", true},
+		{"audio", "fixed_request", "team_audio", true},
+		{"audio", "per_second", "team_audio", true},
+		{"audio", "token", "team_audio", true},
+		{"audio", "image_usage", "team_audio", false},
+		{"image", "per_second", "team_image", false},
+		{"video", "per_second", "team_text", false},
+	}
+	for _, test := range tests {
+		t.Run(test.capability+"/"+test.mode+"/"+test.scene, func(t *testing.T) {
+			if got := teamBillingCapabilitySupported(test.capability, test.mode, test.scene); got != test.want {
+				t.Fatalf("teamBillingCapabilitySupported(%q, %q, %q) = %v, want %v", test.capability, test.mode, test.scene, got, test.want)
+			}
+		})
+	}
+}
+
 func newTeamWalletTestRepo(t *testing.T) (*Repository, *gorm.DB) {
 	t.Helper()
 	db := newBillingTerminalDB(t, "sqlite")

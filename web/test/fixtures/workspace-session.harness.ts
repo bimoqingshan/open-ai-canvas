@@ -38,6 +38,9 @@ test("content stays in its workspace; charging confirmation and replay use the a
     dom.confirm = () => false;
     await expect(createGenerationTask(input)).rejects.toMatchObject({ name: "AbortError" });
     expect(paths).toEqual([`${prefix}/assets`, `${prefix}/tasks/quote`]);
+    const audioInput = { type: "canvas_audio", operation: "audio", prompt: "生成一段音乐", input: { mode: "audio", metadata: { messageId: "audio-message" } } };
+    await expect(createGenerationTask(audioInput)).rejects.toMatchObject({ name: "AbortError" });
+    expect(paths.at(-1)).toBe(`${prefix}/tasks/quote`);
     dom.confirm = () => true;
     await expect(createGenerationTask(input)).rejects.toThrow();
     expect((await createGenerationTask(input)).id).toBe("same-task");

@@ -27,7 +27,16 @@ import copyToClipboard from "copy-to-clipboard";
 import { saveAs } from "file-saver";
 import { serializeSrtEntries } from "@/lib/timeline/srt-parser";
 import { nanoid } from "nanoid";
-import { canvasAppearanceBaseTheme, canvasAppearanceForTheme, DEFAULT_CANVAS_BACKGROUND_MODE, normalizeCanvasAppearance, resolveCanvasAppearance, writeCanvasAppearanceDefault, type CanvasAppearance } from "@/lib/canvas/canvas-appearance";
+import {
+    canvasAppearanceBaseTheme,
+    canvasAppearanceForTheme,
+    DEFAULT_CANVAS_BACKGROUND_MODE,
+    normalizeCanvasAppearance,
+    resolveCanvasAppearance,
+    switchCanvasAppearanceTheme,
+    writeCanvasAppearanceDefault,
+    type CanvasAppearance,
+} from "@/lib/canvas/canvas-appearance";
 import { canvasThemes, type CanvasBackgroundMode } from "@/lib/canvas-theme";
 import { filterCanvasDisplayConnections, persistCanvasHideNodeConnections, readCanvasHideNodeConnections } from "@/lib/canvas/canvas-connection-visibility";
 import { summarizeCanvasContext } from "@/lib/canvas/canvas-context-summary";
@@ -36,6 +45,7 @@ import { flushAssetStorePersistence, useAssetStore, type ImageAsset } from "@/st
 import { flushCanvasStorePersistence, useCanvasStore } from "@/stores/canvas/use-canvas-store";
 import { ensureCanvasNodeAsset } from "@/services/project-asset-sync";
 import { useCanvasThemeStore, useCanvasThemeScope } from "@/stores/canvas/use-canvas-theme-store";
+import { useThemeStore } from "@/stores/use-theme-store";
 import { useUserStore } from "@/stores/use-user-store";
 import { App, Button } from "antd";
 import { ArrowLeftRight } from "lucide-react";
@@ -81,6 +91,7 @@ import { getProject, listCharacters, type ProjectAsset } from "@/services/api/pr
 import { CanvasZoomControls } from "@/components/canvas/canvas-zoom-controls";
 import { persistCanvasAgentCameraFollow, readCanvasAgentCameraFollow } from "@/lib/canvas/canvas-agent-camera-follow";
 import { CanvasShareModal } from "@/components/canvas/canvas-share-modal";
+import { CanvasCommunityPublishModal } from "@/components/canvas/canvas-community-publish-modal";
 import { CanvasScriptEditor, CanvasScriptNodeContent } from "@/components/canvas/canvas-script-node";
 import { StoryboardAssetPickerModal } from "@/components/canvas/storyboard-asset-picker-modal";
 import { bindingForConnectedNode, replaceStoryboardRowAssets, storyboardRowReferenceNodeIds } from "@/lib/canvas/canvas-storyboard-materializer";
@@ -264,6 +275,8 @@ function CanvasViewportPage() {
     const cleanupAssetImages = useAssetStore((state) => state.cleanupImages);
     const colorTheme = useCanvasThemeStore((state) => state.theme);
     const setTheme = useCanvasThemeStore((state) => state.setTheme);
+    const workspaceTheme = useThemeStore((state) => state.theme);
+    const setWorkspaceTheme = useThemeStore((state) => state.setTheme);
     const theme = canvasThemes[colorTheme];
     const defaultDrawingEngine = useUserStore((state) => state.drawingEngine.defaultEngine);
     const shortDramaEnabled = useUserStore((state) => state.features.shortDramaEnabled) && !workspaceTeamId;
@@ -294,6 +307,7 @@ function CanvasViewportPage() {
     const [showImageInfo, setShowImageInfo] = useState(false);
     const [canvasTool, setCanvasTool] = useState<CanvasToolMode>("box-select");
     const [hideNodeConnections, setHideNodeConnections] = useState(readCanvasHideNodeConnections);
+    const [snapToGrid, setSnapToGrid] = useState(false);
     const [agentFollowCamera] = useState(readCanvasAgentCameraFollow);
     const [projectLoaded, setProjectLoaded] = useState(false);
     useLayoutEffect(() => {
@@ -306,6 +320,7 @@ function CanvasViewportPage() {
     const workspaceMode: CanvasWorkspaceMode = "professional";
     const [clearConfirmOpen, setClearConfirmOpen] = useState(false);
     const [shareModalOpen, setShareModalOpen] = useState(false);
+    const [publishModalOpen, setPublishModalOpen] = useState(false);
     const [tapNowImportOpen, setTapNowImportOpen] = useState(false);
     const [nodeSearchOpen, setNodeSearchOpen] = useState(false);
     const [toolbarNodeId, setToolbarNodeId] = useState<string | null>(null);
@@ -374,6 +389,7 @@ function CanvasViewportPage() {
     const selectedNodeIdsRef = useRef(selectedNodeIds);
     const viewportRef = useRef(viewport);
     const [workspaceOpen, setWorkspaceOpen] = useState(false);
+    const [workspaceTab, setWorkspaceTab] = useState<"nodes" | "assets" | "tasks" | "history">("nodes");
     const [storyboardAssetTarget, setStoryboardAssetTarget] = useState<{ nodeId: string; rowId: string } | null>(null);
     const generateNodeRef = useRef<((nodeId: string, mode: CanvasNodeGenerationMode, prompt: string, options?: CanvasNodeGenerationOptions) => Promise<void>) | null>(null);
 
@@ -391,11 +407,19 @@ function CanvasViewportPage() {
         (next: CanvasAppearance) => {
             const fallback = canvasAppearanceBaseTheme(next, colorTheme);
             const normalized = normalizeCanvasAppearance(next, fallback);
+            const nextTheme = canvasAppearanceBaseTheme(normalized, fallback);
             setCanvasAppearance(normalized);
-            setTheme(canvasAppearanceBaseTheme(normalized, fallback));
+            setTheme(nextTheme);
+            if (nextTheme !== colorTheme) setWorkspaceTheme(nextTheme);
         },
-        [colorTheme, setTheme],
+        [colorTheme, setTheme, setWorkspaceTheme],
     );
+
+    useEffect(() => {
+        if (!projectLoaded || workspaceTheme === colorTheme) return;
+        setCanvasAppearance(switchCanvasAppearanceTheme(canvasAppearance, workspaceTheme));
+        setTheme(workspaceTheme);
+    }, [canvasAppearance, colorTheme, projectLoaded, setTheme, workspaceTheme]);
     const saveCanvasAppearanceDefault = useCallback(
         (next: CanvasAppearance) => {
             writeCanvasAppearanceDefault({ appearance: next, backgroundMode });
@@ -1306,6 +1330,7 @@ function CanvasViewportPage() {
         onBatchConnectionTarget: handleBatchConnectionTargetClick,
         onLinkedFolderDrop: archiveNodesToLinkedFolder,
         onDeselect: handleCanvasDeselect,
+        snapToGrid,
     });
 
     const keepNodeToolbar = useCallback(
@@ -2692,14 +2717,7 @@ function CanvasViewportPage() {
         ) : emptyStateKind === "guided" ? (
             <CanvasShortDramaEmptyState
                 onCreatePipeline={createShortDramaPipeline}
-                onSubmitPrompt={(text) => {
-                    setCinematicAgentEntry(true);
-                    // 有输入时直接作为首条消息提交；空输入只打开面板。
-                    if (text) setAgentPrefillRequest((current) => ({ id: (current?.id ?? 0) + 1, text, autoSubmit: true }));
-                    openAgent();
-                }}
                 onStartFreeform={() => updateProject(projectId, { starterMode: "freeform" })}
-                onUpload={() => handleUploadRequest()}
                 onAddText={() => createNode(CanvasNodeType.Text)}
                 onAddScript={() => createNode(CanvasNodeType.Script)}
             />
@@ -2937,6 +2955,8 @@ function CanvasViewportPage() {
             onImportImage={() => handleUploadRequest()}
             onUndo={undoCanvas}
             onRedo={redoCanvas}
+            onImportLibTV={() => setLibTVImportOpen(true)}
+            onImportTapNow={() => setTapNowImportOpen(true)}
             syncIcon={<CanvasSyncStatus projectId={projectId} />}
             onOpenSearch={() => setNodeSearchOpen(true)}
             projectContext={
@@ -2964,7 +2984,7 @@ function CanvasViewportPage() {
                 id="canvas-main"
                 data-project-sidebar={!focusMode && drama.summary ? "" : undefined}
                 tabIndex={-1}
-                className={`relative flex h-full min-h-0 overflow-clip outline-none ${!focusMode && !dramaCanvas ? `canvas-main-with-workspace ${workspaceOpen ? "canvas-workspace-expanded" : ""}` : ""}`}
+                className={`relative flex h-full min-h-0 overflow-clip outline-none ${!focusMode && !dramaCanvas ? `canvas-main-with-workspace canvas-workspace-rail-hidden ${workspaceOpen ? "canvas-workspace-expanded" : ""}` : ""}`}
                 style={{ background: resolvedCanvasAppearance.background, color: theme.node.text }}
             >
                 {!focusMode && !dramaCanvas ? (
@@ -2972,6 +2992,9 @@ function CanvasViewportPage() {
                         key={projectId}
                         heading={projectHeading}
                         open={workspaceOpen}
+                        tab={workspaceTab}
+                        onTabChange={setWorkspaceTab}
+                        hideCollapsedRail
                         onOpen={() => setWorkspaceOpen(true)}
                         onInsertAssets={handleProjectAssetsInsert}
                         projectId={projectId}
@@ -3014,13 +3037,9 @@ function CanvasViewportPage() {
                             {!focusMode ? (
                                 <CanvasTopBar
                                     projectHeading={dramaCanvas ? projectHeading : undefined}
-                                    view={canvasView}
-                                    onViewChange={changeCanvasView}
-                                    onImportLibTV={() => setLibTVImportOpen(true)}
-                                    onImportTapNow={() => setTapNowImportOpen(true)}
                                     onShare={workspaceTeamId ? undefined : () => setShareModalOpen(true)}
+                                    onPublish={workspaceTeamId ? undefined : () => setPublishModalOpen(true)}
                                     shortcutRequestNonce={shortcutRequestNonce}
-                                    onOpenSearch={() => setNodeSearchOpen(true)}
                                     onEnterFocusMode={enterFocusMode}
                                     shortDramaGuide={shortDramaGuide}
                                 />
@@ -3050,6 +3069,9 @@ function CanvasViewportPage() {
 
                             {batchReferencePickerModal}
                             {!workspaceTeamId && <CanvasShareModal projectId={projectId} open={shareModalOpen} onClose={() => setShareModalOpen(false)} beforeCreate={saveCanvasProject} />}
+                            {!workspaceTeamId && (
+                                <CanvasCommunityPublishModal projectId={projectId} projectTitle={currentProject?.title || "未命名画布"} open={publishModalOpen} onClose={() => setPublishModalOpen(false)} beforeSubmit={saveCanvasProject} />
+                            )}
                             {libTVImportOpen ? (
                                 <Suspense fallback={null}>
                                     <LibTVImportDialog key={projectId} open projectId={projectId} viewport={viewport} viewportSize={size} onClose={() => setLibTVImportOpen(false)} onApply={applyImportedCanvas} />
@@ -3236,6 +3258,7 @@ function CanvasViewportPage() {
                                             }}
                                             onOpenProjectCharacters={() => openCharacterLibrary()}
                                             onOpenPoseLibrary={() => openPoseLibrary()}
+                                            dockPlacement={focusMode ? "bottom" : "left"}
                                             compact={dramaCanvas}
                                         />
                                     ) : null}
@@ -3249,7 +3272,6 @@ function CanvasViewportPage() {
                                     containerRef={containerRef}
                                     panelWidth={640}
                                     panelHeight={540}
-                                    allowOverflow
                                     dragOffset={dragPreview?.nodeIds.has(angleNode.id) ? { x: dragPreview.x, y: dragPreview.y } : null}
                                     isDragging={isNodeDragging && Boolean(dragPreview?.nodeIds.has(angleNode.id))}
                                 >
@@ -3305,7 +3327,6 @@ function CanvasViewportPage() {
                                     node={dialogNode}
                                     viewport={viewport}
                                     containerRef={containerRef}
-                                    allowOverflow={dialogNode.type !== CanvasNodeType.Config}
                                     dragOffset={dragPreview?.nodeIds.has(dialogNode.id) ? { x: dragPreview.x, y: dragPreview.y } : null}
                                     isDragging={isNodeDragging && Boolean(dragPreview?.nodeIds.has(dialogNode.id))}
                                 >
@@ -3458,10 +3479,30 @@ function CanvasViewportPage() {
                                         onScaleChange={setZoomScale}
                                         onFitContent={fitCanvasContent}
                                         onAutoArrange={autoArrangeCanvasNodes}
+                                        snapToGrid={snapToGrid}
+                                        onSnapToGridChange={setSnapToGrid}
                                         hideNodeConnections={hideNodeConnections}
                                         onHideNodeConnectionsChange={setHideNodeConnections}
                                         isMiniMapOpen={isMiniMapOpen}
                                         onToggleMiniMap={() => setIsMiniMapOpen((value) => !value)}
+                                        workspacePanelOpen={workspaceOpen}
+                                        workspacePanelTab={workspaceTab}
+                                        onOpenWorkspaceNodes={() => {
+                                            if (workspaceOpen && workspaceTab === "nodes") {
+                                                setWorkspaceOpen(false);
+                                                return;
+                                            }
+                                            setWorkspaceTab("nodes");
+                                            setWorkspaceOpen(true);
+                                        }}
+                                        onOpenWorkspaceAssets={() => {
+                                            if (workspaceOpen && workspaceTab === "assets") {
+                                                setWorkspaceOpen(false);
+                                                return;
+                                            }
+                                            setWorkspaceTab("assets");
+                                            setWorkspaceOpen(true);
+                                        }}
                                         onOpenShortcuts={() => setShortcutRequestNonce((value) => value + 1)}
                                     />
                                 </CanvasOverlayLayerContainer>

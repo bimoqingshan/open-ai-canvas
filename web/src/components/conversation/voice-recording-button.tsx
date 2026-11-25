@@ -1,6 +1,7 @@
 import { Button } from "antd";
 import { Tooltip } from "@/components/ui/base/tooltip";
 import { lazy, Suspense, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import { Mic } from "lucide-react";
 
@@ -22,6 +23,7 @@ type VoiceRecordingButtonProps = {
  * 使用局部状态，多个输入行可独立使用
  */
 export function VoiceRecordingButton({ onTranscribed, disabled, className }: VoiceRecordingButtonProps) {
+    const { t } = useTranslation();
     const theme = canvasThemes[useActiveTheme()];
     const [open, setOpen] = useState(false);
     useEffect(() => {
@@ -30,7 +32,7 @@ export function VoiceRecordingButton({ onTranscribed, disabled, className }: Voi
 
     return (
         <>
-            <Tooltip title="实时对话">
+            <Tooltip title={t("create.home.liveConversation")}>
                 <Button
                     type="text"
                     shape="circle"
@@ -39,11 +41,11 @@ export function VoiceRecordingButton({ onTranscribed, disabled, className }: Voi
                     style={className ? undefined : { color: theme.node.muted }}
                     icon={<Mic className="size-4" />}
                     onClick={() => setOpen(true)}
-                    aria-label="实时对话"
+                    aria-label={t("create.home.liveConversation")}
                 />
             </Tooltip>
             {open && !disabled ? (
-                <Suspense fallback={<span role="status">正在打开语音输入…</span>}>
+                <Suspense fallback={<span role="status">{t("create.home.openingVoiceInput")}</span>}>
                     <VoiceRecordingInline
                         onTranscribed={(text) => {
                             setOpen(false);

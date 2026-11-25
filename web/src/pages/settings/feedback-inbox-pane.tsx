@@ -41,7 +41,7 @@ export function FeedbackInboxPane() {
             {/* Header */}
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/50 pb-4">
                 <div>
-                    <h3 className="text-base font-semibold text-foreground">{t("account.settings.feedbacks.title")}</h3>
+                    <h3 className="feedback-inbox-title text-base font-semibold text-foreground">{t("account.settings.feedbacks.title")}</h3>
                     <p className="text-xs text-muted-foreground mt-0.5">{t("account.settings.feedbacks.description")}</p>
                 </div>
                 <div className="flex items-center gap-2">

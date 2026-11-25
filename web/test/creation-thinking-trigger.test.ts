@@ -1,13 +1,13 @@
 import { expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 
-test("home thinking is directly draggable without opening a menu", () => {
+test("home thinking opens a popover containing the draggable slider", () => {
     const source = readFileSync(new URL("../src/pages/create/creation-workspace.tsx", import.meta.url), "utf8");
     const control = source.slice(source.indexOf("function ThinkingControl("), source.indexOf("function DurationMenu("));
+    expect(control).toContain("<Popover");
     expect(control).toContain("<ThinkingLevelSlider");
     expect(control).toContain("onChange={onChange}");
-    expect(control).not.toContain("<Popover");
-    expect(control).not.toContain("<button");
+    expect(control).toContain("creation-thinking-trigger");
 });
 
 test("Agent chat composer exposes the same thinking control as settings", () => {

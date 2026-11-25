@@ -23,13 +23,31 @@ func (s *Service) TeamWorkspaceTask(actorID, teamID string, req CreateTaskReques
 	if err != nil {
 		return nil, err
 	}
-	if req.Type != "canvas_text" || req.Operation != "text" || req.Input["mode"] != "text" || taskInputUsesCustomChannel(req.Input) || taskInputUsesWorkflowProvider(req.Input) || req.Input["agentRequests"] != nil {
-		return nil, BadAuthRequest("当前空间仅开放系统模型的文本生成")
+	mode := stringValue(req.Input["mode"])
+	if taskInputUsesCustomChannel(req.Input) || taskInputUsesWorkflowProvider(req.Input) || req.Input["agentRequests"] != nil || req.Provider != "" {
+		return nil, BadAuthRequest("团队空间仅支持系统模型的文本、图片、视频和音频生成")
 	}
-	for _, key := range []string{"referenceImages", "referenceVideos", "referenceAudios"} {
-		if refs := req.Input[key]; refs != nil {
-			if list, ok := refs.([]any); !ok || len(list) != 0 {
-				return nil, BadAuthRequest("当前空间的文本生成仅支持文本参考")
+	if !((mode == "text" && req.Type == "canvas_text" && req.Operation == "text") ||
+		(mode == "image" && req.Type == "canvas_image" && req.Operation == "image") ||
+		(mode == "video" && req.Type == "canvas_video" && (req.Operation == "video" || req.Operation == "text_to_video" || req.Operation == "image_to_video" || req.Operation == "reference_to_video" || req.Operation == "extend" || req.Operation == "video_edit")) ||
+		(mode == "audio" && req.Type == "canvas_audio" && req.Operation == "audio")) {
+		return nil, BadAuthRequest("团队空间仅支持系统模型的文本、图片、视频和音频生成")
+	}
+	if mode != "audio" {
+		for _, key := range []string{"referenceAudios"} {
+			if refs := req.Input[key]; refs != nil {
+				if list, ok := refs.([]any); !ok || len(list) != 0 {
+					return nil, BadAuthRequest("团队空间暂不支持音频参考")
+				}
+			}
+		}
+	}
+	if mode == "audio" {
+		for _, key := range []string{"referenceImages", "referenceVideos"} {
+			if refs := req.Input[key]; refs != nil {
+				if list, ok := refs.([]any); !ok || len(list) != 0 {
+					return nil, BadAuthRequest("音频生成仅支持音频参考")
+				}
 			}
 		}
 	}
@@ -64,7 +82,7 @@ func (s *Service) TeamWorkspaceTask(actorID, teamID string, req CreateTaskReques
 	}
 	config, _ := req.Input["config"].(map[string]any)
 	if req.LogicalModelID == "" && stringValue(config["channelId"]) == "" {
-		return nil, BadAuthRequest("请选择系统文本模型")
+		return nil, BadAuthRequest("请选择系统模型")
 	}
 	options, _ := req.Input["textOptions"].(map[string]any)
 	metadata, _ := req.Input["metadata"].(map[string]any)
@@ -77,8 +95,14 @@ func (s *Service) TeamWorkspaceTask(actorID, teamID string, req CreateTaskReques
 	if source, _ := metadata["source"].(string); source == "create-page" {
 		context["source"] = source
 	}
-	const outputBudget = 1024
-	req.Input = map[string]any{"mode": "text", "prompt": req.Prompt, "maxOutputTokens": outputBudget, "config": map[string]any{"channelId": stringValue(config["channelId"]), "model": stringValue(config["model"]), "priceTierId": stringValue(config["priceTierId"])}, "textHistory": req.Input["textHistory"], "metadata": context, "textOptions": map[string]any{"maxOutputTokens": outputBudget, "stream": options["stream"], "thinkingLevel": options["thinkingLevel"]}}
+	if mode == "text" {
+		const outputBudget = 1024
+		req.Input = map[string]any{"mode": mode, "prompt": req.Prompt, "maxOutputTokens": outputBudget, "config": map[string]any{"channelId": stringValue(config["channelId"]), "model": stringValue(config["model"]), "priceTierId": stringValue(config["priceTierId"])}, "textHistory": req.Input["textHistory"], "metadata": context, "textOptions": map[string]any{"maxOutputTokens": outputBudget, "stream": options["stream"], "thinkingLevel": options["thinkingLevel"]}}
+	} else {
+		config["channelId"] = strings.TrimSpace(stringValue(config["channelId"]))
+		config["model"] = strings.TrimSpace(stringValue(config["model"]))
+		req.Input["metadata"] = context
+	}
 	req.ProjectID = ""
 	prepared := &creationTaskPreparation{}
 	req.creationPrepare = prepared
@@ -87,14 +111,14 @@ func (s *Service) TeamWorkspaceTask(actorID, teamID string, req CreateTaskReques
 		return nil, err
 	}
 	order := prepared.Order
-	if order == nil || order.Capability != "text" || (order.BillingMode != "fixed_request" && order.BillingMode != "token") {
-		return nil, BadAuthRequest("模型不支持团队积分封顶")
+	if order == nil || order.Capability != mode || !teamTaskBillingModeAllowed(mode, order.BillingMode) {
+		return nil, BadAuthRequest("模型计费方式暂不支持团队积分封顶")
 	}
 	if quoteOnly {
 		return map[string]int64{"maxChargeMicrocredits": order.AmountMicrocredits}, nil
 	}
 	if order.AmountMicrocredits > *req.MaxChargeMicrocredits {
-		return nil, teamError(409, "team_text_quote_changed", "当前报价超过已确认上限，请重新报价")
+		return nil, teamError(409, "team_task_quote_changed", "当前报价超过已确认上限，请重新报价")
 	}
 	var input map[string]any
 	if err := json.Unmarshal([]byte(task.InputJSON), &input); err != nil {
@@ -111,7 +135,7 @@ func (s *Service) TeamWorkspaceTask(actorID, teamID string, req CreateTaskReques
 	task.ID, task.SubmissionHash, task.UserID, task.ProjectID, task.BillingOrderID = id, digest, storageKey, canvasID, order.ID
 	task.AuthorizedChargeMicrocredits = order.AmountMicrocredits
 	order.TaskID, order.IdempotencyKey, order.TeamID, order.MembershipID = id, "task:"+id, teamID, member.ID
-	order.Scene, order.BillingAccountID, order.ChargeLimitSet, order.ChargeLimitMicrocredits = "team_text", model.TeamMemberCreditAccountID(member.ID), true, order.AmountMicrocredits
+	order.Scene, order.BillingAccountID, order.ChargeLimitSet, order.ChargeLimitMicrocredits = "team_"+mode, model.TeamMemberCreditAccountID(member.ID), true, order.AmountMicrocredits
 	policy, err := s.RuntimePolicy()
 	if err != nil {
 		return nil, err
@@ -123,6 +147,21 @@ func (s *Service) TeamWorkspaceTask(actorID, teamID string, req CreateTaskReques
 		return nil, teamWalletError(err)
 	}
 	return taskForOutput(*task), nil
+}
+
+func teamTaskBillingModeAllowed(capability, billingMode string) bool {
+	switch capability {
+	case "text":
+		return billingMode == "fixed_request" || billingMode == "token"
+	case "image":
+		return billingMode == "fixed_request" || billingMode == "image_usage"
+	case "video":
+		return billingMode == "fixed_request" || billingMode == "per_second"
+	case "audio":
+		return billingMode == "fixed_request" || billingMode == "per_second" || billingMode == "token"
+	default:
+		return false
+	}
 }
 
 func (s *Service) taskModelActor(task *model.Task) (string, error) {

@@ -15,7 +15,7 @@ export function TeamQueryError({ error, retry }: { error: Error; retry: () => un
     return <Alert type="error" showIcon title="读取失败" description={error.message} action={<Button onClick={() => void retry()}>重试</Button>} />;
 }
 
-export default function TeamsPage() {
+export default function TeamsPage({ embedded = false, onNavigate }: { embedded?: boolean; onNavigate?: () => void } = {}) {
     const userId = useUserStore((state) => state.user?.id) || "";
     const teams = useQuery({ queryKey: teamKeys.list(userId), queryFn: ({ signal }) => listTeams(signal) });
     const queryClient = useQueryClient();
@@ -36,14 +36,15 @@ export default function TeamsPage() {
         mutationFn: () => (parentId ? createTeamGroup(parentId, name.trim()) : createTeam(name.trim())),
         onSuccess: async (team) => {
             await queryClient.invalidateQueries({ queryKey: teamKeys.all(userId) });
+            onNavigate?.();
             navigate(`/teams/${encodeURIComponent(team.id)}`, { replace: true });
         },
         onError: (error) => message.error(error.message),
     });
     return (
-        <WorkspacePage>
+        <WorkspacePage scroll={!embedded} className={embedded ? "teams-page-embedded" : undefined}>
             <PageHeader
-                title="公司与团队"
+                title={embedded ? "团队管理" : "公司与团队"}
                 description="进入已加入的公司和小组，管理成员与共享素材。"
                 actions={
                     <>
@@ -70,7 +71,7 @@ export default function TeamsPage() {
                     {!teams.isError &&
                         roots.map((team) => (
                             <section key={team.id} className="rounded-xl border border-border bg-background p-4">
-                                <Link to={`/teams/${encodeURIComponent(team.id)}`} className="flex items-center gap-3 rounded-lg p-2 hover:bg-surface-hover">
+                                <Link to={`/teams/${encodeURIComponent(team.id)}`} onClick={onNavigate} className="flex items-center gap-3 rounded-lg p-2 hover:bg-surface-hover">
                                     <span className="space-directory-icon">
                                         <Building2 aria-hidden />
                                     </span>
@@ -83,7 +84,7 @@ export default function TeamsPage() {
                                         ?.filter((group) => group.parentId === team.id)
                                         .map((group) => (
                                             <li key={group.id}>
-                                                <Link className="flex items-center gap-2 rounded-md px-2 py-2 text-sm hover:bg-surface-hover" to={`/teams/${encodeURIComponent(group.id)}`}>
+                                                <Link className="flex items-center gap-2 rounded-md px-2 py-2 text-sm hover:bg-surface-hover" to={`/teams/${encodeURIComponent(group.id)}`} onClick={onNavigate}>
                                                     <Users className="size-4 shrink-0 text-muted-foreground" aria-hidden />
                                                     <span className="truncate">{group.name}</span>
                                                 </Link>

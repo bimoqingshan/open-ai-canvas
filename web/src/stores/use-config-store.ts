@@ -153,6 +153,7 @@ export type AiConfig = {
     audioLanguage: string;
     audioDialect: string;
     audioInstructions: string;
+    audioInstrumental?: string;
     audioEmotionControlMethod: string;
     audioEmotionRandom: string;
     audioEmotionHappy: string;
@@ -209,6 +210,7 @@ export const defaultConfig: AiConfig = {
     audioLanguage: "",
     audioDialect: "",
     audioInstructions: "",
+    audioInstrumental: "",
     audioEmotionControlMethod: "与音色参考音频相同",
     audioEmotionRandom: "false",
     audioEmotionHappy: "0",
@@ -471,6 +473,7 @@ export function normalizeConfigSnapshot(snapshot: ConfigStoreSnapshot | undefine
             audioLanguage: config.audioLanguage || "",
             audioDialect: config.audioDialect || "",
             audioInstructions: config.audioInstructions || "",
+            audioInstrumental: config.audioInstrumental || "",
             audioEmotionControlMethod: config.audioEmotionControlMethod || defaultConfig.audioEmotionControlMethod,
             audioEmotionRandom: config.audioEmotionRandom || defaultConfig.audioEmotionRandom,
             audioEmotionHappy: config.audioEmotionHappy || defaultConfig.audioEmotionHappy,

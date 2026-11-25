@@ -2,7 +2,7 @@ import { workspacePath } from "@/lib/workspace-routes";
 import { useTranslation } from "react-i18next";
 import { useRef, useState } from "react";
 import { App, Button } from "antd";
-import { ArrowUpRight, FolderOpen, ArrowRight } from "lucide-react";
+import { FolderOpen, ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router";
 import { useAuthEntry } from "@/hooks/use-auth-entry";
 import { AgentOrb } from "@/components/ui/agent-orb";
@@ -65,7 +65,7 @@ export function CreationAgentEntry() {
             <div className="creation-agent-actions">
                 <Button type="primary" icon={<ArrowRight />} loading={busy} disabled={!hydrated} onClick={() => void start()}>
                     {created.current ? t("create.agentEntry.retryEnter") : t("create.agentEntry.newCanvas")}
-                    <ArrowUpRight />
+                    <ArrowRight />
                 </Button>
                 <Button icon={<FolderOpen />} disabled={busy} onClick={() => navigate(workspacePath("/canvas?agent=1"))}>
                     {t("create.agentEntry.continueExisting")}

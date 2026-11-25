@@ -135,7 +135,7 @@ func validateTargetTableNames(actual []string) error {
 	}
 	extra := make([]string, 0)
 	for name := range actualSet {
-		if name == "schema_migrations" {
+		if name == "schema_migrations" || name == "linghua_schema_migrations" {
 			continue
 		}
 		if _, ok := expected[name]; !ok {
@@ -341,8 +341,15 @@ func equivalent(left reflect.Value, right reflect.Value) bool {
 }
 
 func verifyMigrationCoverage(db *gorm.DB) error {
-	expected := make(map[string]struct{}, len(database.Models()))
+	expected := make(map[string]struct{}, len(database.Models())+6)
 	for _, value := range database.Models() {
+		statement := &gorm.Statement{DB: db}
+		if err := statement.Parse(value); err != nil {
+			return err
+		}
+		expected[statement.Schema.Table] = struct{}{}
+	}
+	for _, value := range []any{&model.CommunityWork{}, &model.CommunityCategory{}, &model.CreatorChallenge{}, &model.HomeCarouselSetting{}, &model.NavigationMenuItem{}, &model.LearningSquareSetting{}} {
 		statement := &gorm.Statement{DB: db}
 		if err := statement.Parse(value); err != nil {
 			return err
@@ -507,6 +514,12 @@ func migrations() []tableMigration {
 		migrateTable[model.WorkbenchTool]("workbench_tools"),
 		migrateTable[model.WorkbenchPreset]("workbench_presets"),
 		migrateTable[model.InspirationFeedEntry]("inspiration_feed_entries"),
+		migrateTable[model.CommunityWork]("linghua_community_works"),
+		migrateTable[model.CommunityCategory]("linghua_community_categories"),
+		migrateTable[model.CreatorChallenge]("linghua_creator_challenges"),
+		migrateTable[model.HomeCarouselSetting]("linghua_home_carousel_settings"),
+		migrateTable[model.NavigationMenuItem]("linghua_navigation_menu_items"),
+		migrateTable[model.LearningSquareSetting]("linghua_learning_square_settings"),
 		migrateTable[model.PoseLibrarySource]("pose_library_sources"),
 		migrateTable[model.PoseLibraryItem]("pose_library_items"),
 		migrateTable[model.CloudAgentExecution]("cloud_agent_executions"),

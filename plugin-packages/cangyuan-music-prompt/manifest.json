@@ -1,0 +1,157 @@
+{
+  "apiVersion": "yingce.plugin/v2",
+  "id": "cangyuan-music-prompt",
+  "name": "沧元提示词直出音乐",
+  "version": "1.0.0",
+  "author": "沧元算力 / 影策",
+  "description": "通过唯一 prompt 直接生成音乐，轮询任务并保存全部返回音频。",
+  "permissions": [
+    "generation.run",
+    "media.read"
+  ],
+  "configuration": {
+    "fields": [
+      {
+        "name": "apiKey",
+        "type": "secret",
+        "label": "API Key",
+        "required": true
+      }
+    ]
+  },
+  "contributes": {
+    "providers": [
+      {
+        "id": "cangyuan-music-prompt",
+        "label": "沧元提示词直出音乐",
+        "capabilities": [
+          "audio"
+        ],
+        "scopes": [
+          "admin.system-channel",
+          "user.custom-channel",
+          "canvas",
+          "creation",
+          "agent"
+        ],
+        "baseUrl": "https://direct-api.cangyuansuanli.cn",
+        "requiresPublicMediaUrls": false,
+        "auth": {
+          "type": "bearer",
+          "field": "apiKey"
+        },
+        "parameters": [
+          {
+            "name": "model",
+            "type": "string",
+            "required": true,
+            "mapping": "model",
+            "description": "音乐模型 ID，例如 su2-suno-v6。"
+          },
+          {
+            "name": "prompt",
+            "type": "string",
+            "required": true,
+            "mapping": "prompt",
+            "description": "唯一正文；歌词、风格、时长等要求均写在此提示词内。"
+          },
+          {
+            "name": "instrumental",
+            "type": "boolean",
+            "required": false,
+            "mapping": "providerOptions.cangyuan-music-prompt.instrumental",
+            "description": "可选纯音乐开关；未设置时省略，显式 false 会原样发送。"
+          }
+        ],
+        "create": {
+          "method": "POST",
+          "path": "/v1/music",
+          "contentType": "application/json",
+          "body": {
+            "model": {
+              "$ref": "request.model"
+            },
+            "prompt": {
+              "$ref": "request.prompt"
+            },
+            "n": 1,
+            "instrumental": {
+              "$omitEmpty": {
+                "$if": {
+                  "condition": {
+                    "$ne": [
+                      {
+                        "$ref": "request.providerOptions.cangyuan-music-prompt.instrumental"
+                      },
+                      null
+                    ]
+                  },
+                  "then": {
+                    "$ref": "request.providerOptions.cangyuan-music-prompt.instrumental"
+                  },
+                  "else": null
+                }
+              }
+            }
+          }
+        },
+        "poll": {
+          "method": "GET",
+          "path": "/v1/music/{{taskId}}"
+        },
+        "response": {
+          "taskId": {
+            "$coalesce": [
+              {
+                "$ref": "response.id"
+              },
+              {
+                "$ref": "response.task_id"
+              },
+              {
+                "$ref": "taskId"
+              }
+            ]
+          },
+          "status": {
+            "$coalesce": [
+              {
+                "$ref": "response.status"
+              },
+              "pending"
+            ]
+          },
+          "stage": {
+            "$ref": "response.progress"
+          },
+          "message": {
+            "$coalesce": [
+              {
+                "$ref": "response.error.message"
+              },
+              {
+                "$ref": "response.message"
+              },
+              {
+                "$ref": "response.msg"
+              }
+            ]
+          },
+          "audios": {
+            "$ref": "response.music_url"
+          },
+          "errorPaths": [
+            "error.code"
+          ],
+          "resultEphemeral": true,
+          "messagePaths": [
+            "error.message",
+            "message",
+            "msg"
+          ]
+        }
+      }
+    ]
+  },
+  "documentation": "# 沧元提示词直出音乐\n\n该目录是独立官方声明式协议插件。插件只提交一个 `prompt`，轮询任务，并将供应商返回的全部音频地址交给宿主下载和保存。\n\n接口字段与已确认的请求/响应样例见 [docs/interface.md](docs/interface.md)。\n\n---\n\n# 沧元提示词直出音乐接口\n\n## 协议身份\n\n- 插件和 Provider ID：`cangyuan-music-prompt`。\n- 能力：`audio`。\n- 默认 Base URL：`https://direct-api.cangyuansuanli.cn`。\n- 鉴权：`Authorization: Bearer <API Key>`。\n- 创建：`POST /v1/music`。\n- 查询：`POST /v1/music/{id}`。\n\n## 创建请求\n\n| 字段 | 取值 | 说明 |\n| --- | --- | --- |\n| `model` | 渠道模型名，例如 `su2-suno-v6` | 必填。 |\n| `prompt` | 唯一正文 | 必填。不另传歌词、风格、时长或参考音频。 |\n| `n` | 固定 `1` | 一次请求。响应仍可能包含多段音频。 |\n| `instrumental` | 可选布尔值 | 未设置时不发送；显式 `false` 会保留并发送。 |\n\n示例：\n\n```json\n{\n  \"model\": \"su2-suno-v6\",\n  \"prompt\": \"慢速爵士钢琴，雨夜，没有人声\",\n  \"n\": 1,\n  \"instrumental\": true\n}\n```\n\n创建响应使用 `id` 作为轮询任务 ID。旧公共名 `suno` 不属于本插件；本插件也不沿用其它 `suno-*` 接口的字段规则。\n\n## 轮询与结果\n\n对创建响应的 `id` 发起 `POST /v1/music/{id}`。已确认的完成响应形状：\n\n```json\n{\n  \"id\": \"task_42\",\n  \"object\": \"music.generation\",\n  \"model\": \"su2-suno-v6\",\n  \"status\": \"completed\",\n  \"progress\": \"100%\",\n  \"created_at\": 1715923200,\n  \"music_url\": [\n    \"https://example.com/result-a.mp3\",\n    \"https://example.com/result-b.mp3\"\n  ]\n}\n```\n\n插件把 `status` 交给宿主状态机，把 `progress` 用作阶段文案，并按原顺序将 `music_url` 中的所有地址映射为音频结果。结果地址按临时上游媒体处理，由宿主完成下载、校验和资源保存；不只取列表首项。\n\n## 错误与边界\n\n- HTTP/业务失败按失败处理，不伪造音频结果。\n- 不声明取消或独立结果下载接口。\n- API Key 由宿主渠道配置提供，不写入提示词或 URL。\n\n<!-- YINGCE_MANIFEST_CONTRACT_START -->\n## Manifest 完整接口定义\n\n以下 JSON 与插件包内实际 `manifest.json` 逐字段一致，覆盖插件身份、权限、配置、鉴权、参数、校验、创建、Agent、查询、取消、结果下载、响应和 Agent 响应映射。`documentation` 字段的值就是当前完整文档；为避免文档在自身内部无限递归，JSON 中仅用等义占位文本表示正文。\n\n```json\n{\n  \"apiVersion\": \"yingce.plugin/v2\",\n  \"id\": \"cangyuan-music-prompt\",\n  \"name\": \"沧元提示词直出音乐\",\n  \"version\": \"1.0.0\",\n  \"author\": \"沧元算力 / 影策\",\n  \"description\": \"通过唯一 prompt 直接生成音乐，轮询任务并保存全部返回音频。\",\n  \"permissions\": [\n    \"generation.run\",\n    \"media.read\"\n  ],\n  \"configuration\": {\n    \"fields\": [\n      {\n        \"name\": \"apiKey\",\n        \"type\": \"secret\",\n        \"label\": \"API Key\",\n        \"required\": true\n      }\n    ]\n  },\n  \"contributes\": {\n    \"providers\": [\n      {\n        \"id\": \"cangyuan-music-prompt\",\n        \"label\": \"沧元提示词直出音乐\",\n        \"capabilities\": [\n          \"audio\"\n        ],\n        \"scopes\": [\n          \"admin.system-channel\",\n          \"user.custom-channel\",\n          \"canvas\",\n          \"creation\",\n          \"agent\"\n        ],\n        \"baseUrl\": \"https://direct-api.cangyuansuanli.cn\",\n        \"requiresPublicMediaUrls\": false,\n        \"auth\": {\n          \"type\": \"bearer\",\n          \"field\": \"apiKey\"\n        },\n        \"parameters\": [\n          {\n            \"name\": \"model\",\n            \"type\": \"string\",\n            \"required\": true,\n            \"mapping\": \"model\",\n            \"description\": \"音乐模型 ID，例如 su2-suno-v6。\"\n          },\n          {\n            \"name\": \"prompt\",\n            \"type\": \"string\",\n            \"required\": true,\n            \"mapping\": \"prompt\",\n            \"description\": \"唯一正文；歌词、风格、时长等要求均写在此提示词内。\"\n          },\n          {\n            \"name\": \"instrumental\",\n            \"type\": \"boolean\",\n            \"required\": false,\n            \"mapping\": \"providerOptions.cangyuan-music-prompt.instrumental\",\n            \"description\": \"可选纯音乐开关；未设置时省略，显式 false 会原样发送。\"\n          }\n        ],\n        \"create\": {\n          \"method\": \"POST\",\n          \"path\": \"/v1/music\",\n          \"contentType\": \"application/json\",\n          \"body\": {\n            \"model\": {\n              \"$ref\": \"request.model\"\n            },\n            \"prompt\": {\n              \"$ref\": \"request.prompt\"\n            },\n            \"n\": 1,\n            \"instrumental\": {\n              \"$omitEmpty\": {\n                \"$if\": {\n                  \"condition\": {\n                    \"$ne\": [\n                      {\n                        \"$ref\": \"request.providerOptions.cangyuan-music-prompt.instrumental\"\n                      },\n                      null\n                    ]\n                  },\n                  \"then\": {\n                    \"$ref\": \"request.providerOptions.cangyuan-music-prompt.instrumental\"\n                  },\n                  \"else\": null\n                }\n              }\n            }\n          }\n        },\n        \"poll\": {\n          \"method\": \"GET\",\n          \"path\": \"/v1/music/{{taskId}}\"\n        },\n        \"response\": {\n          \"taskId\": {\n            \"$coalesce\": [\n              {\n                \"$ref\": \"response.id\"\n              },\n              {\n                \"$ref\": \"response.task_id\"\n              },\n              {\n                \"$ref\": \"taskId\"\n              }\n            ]\n          },\n          \"status\": {\n            \"$coalesce\": [\n              {\n                \"$ref\": \"response.status\"\n              },\n              \"pending\"\n            ]\n          },\n          \"stage\": {\n            \"$ref\": \"response.progress\"\n          },\n          \"message\": {\n            \"$coalesce\": [\n              {\n                \"$ref\": \"response.error.message\"\n              },\n              {\n                \"$ref\": \"response.message\"\n              },\n              {\n                \"$ref\": \"response.msg\"\n              }\n            ]\n          },\n          \"audios\": {\n            \"$ref\": \"response.music_url\"\n          },\n          \"errorPaths\": [\n            \"error.code\"\n          ],\n          \"resultEphemeral\": true,\n          \"messagePaths\": [\n            \"error.message\",\n            \"message\",\n            \"msg\"\n          ]\n        }\n      }\n    ]\n  },\n  \"documentation\": \"<当前插件的完整 documentation，由 README.md 与 docs/interface.md 拼接而成；为避免 JSON 递归，此处不重复展开正文。>\"\n}\n```\n<!-- YINGCE_MANIFEST_CONTRACT_END -->\n"
+}

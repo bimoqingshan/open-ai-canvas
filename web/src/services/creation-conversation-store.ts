@@ -1,5 +1,5 @@
 import { localForageStorageForScope } from "@/lib/localforage-storage";
-import { creationMessageMayHaveExternalVideoResult } from "@/lib/creation-message-recovery";
+import { creationMessageMayHaveExternalMediaResult } from "@/lib/creation-message-recovery";
 import { getActiveUserScope } from "@/lib/user-scope";
 
 export const CREATION_CONVERSATIONS_KEY = "creation-conversations-v1";
@@ -38,7 +38,7 @@ export function removeCreationConversationSnapshot<T extends { id: string }>(con
 function isRecoverableCreationMessage(message: PendingCreationMessage) {
     if (message.role !== "assistant" || !message.taskIds?.length) return false;
     if (message.mode === "text") return message.status === "streaming" || message.status === "pending";
-    return message.status === "pending" || (message.status === "error" && (message.errorKind !== "task" || creationMessageMayHaveExternalVideoResult(message)));
+    return message.status === "pending" || (message.status === "error" && (message.errorKind !== "task" || creationMessageMayHaveExternalMediaResult(message)));
 }
 
 export function pendingCreationTaskKey(conversations: StoredCreationConversation[]) {

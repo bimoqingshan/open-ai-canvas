@@ -1,8 +1,13 @@
-import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type RefObject } from "react";
-import { CircleDashed, Focus, Grip, HelpCircle, Map, Minus, Plus, RotateCcw, Search } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type RefObject } from "react";
+import { Compass, Eye, EyeOff, Focus, Grid3X3, HelpCircle, Images, Layers3, LayoutTemplate } from "lucide-react";
+import { FloatingDock, type FloatingDockEntry } from "@/components/ui/aceternity/floating-dock";
+import { aceternityMotion } from "@/lib/aceternity-motion";
+import { canvasDockStyle } from "@/lib/canvas/canvas-aceternity-style";
+import { canvasThemes } from "@/lib/canvas-theme";
 import { subscribeCanvasViewportPreview } from "@/lib/canvas/canvas-live-viewport";
 import { canvasBottomRowLayout } from "@/lib/canvas/canvas-overlay-layout";
-import { CanvasZoomReadout, useCanvasZoomPercent } from "./canvas-zoom-readout";
+import { useActiveTheme } from "@/stores/canvas/use-canvas-theme-store";
 import "./canvas-bottom-toolbar.css";
 import "./canvas-zoom-controls.css";
 
@@ -11,10 +16,16 @@ type CanvasZoomControlsProps = {
     onScaleChange: (scale: number) => void;
     onFitContent: () => void;
     onAutoArrange?: () => void;
+    snapToGrid?: boolean;
+    onSnapToGridChange?: (value: boolean) => void;
     hideNodeConnections?: boolean;
     onHideNodeConnectionsChange?: (value: boolean) => void;
     isMiniMapOpen: boolean;
     onToggleMiniMap: () => void;
+    workspacePanelOpen?: boolean;
+    workspacePanelTab?: "nodes" | "assets" | "tasks" | "history";
+    onOpenWorkspaceNodes?: () => void;
+    onOpenWorkspaceAssets?: () => void;
     onOpenShortcuts: () => void;
     containerRef?: RefObject<HTMLDivElement | null>;
 };
@@ -24,18 +35,32 @@ const QUICK_ZOOM_LEVELS = [0.25, 0.5, 1, 2] as const;
 const MAIN_TOOLBAR_SHIFT = "--canvas-main-toolbar-shift";
 const MAIN_TOOLBAR_MAX_WIDTH = "--canvas-main-toolbar-max-width";
 
-export function CanvasZoomControls({ scale, onScaleChange, onFitContent, onAutoArrange, hideNodeConnections = false, onHideNodeConnectionsChange, isMiniMapOpen, onToggleMiniMap, onOpenShortcuts, containerRef }: CanvasZoomControlsProps) {
+export function CanvasZoomControls({
+    scale,
+    onScaleChange,
+    onFitContent,
+    onAutoArrange,
+    snapToGrid = false,
+    onSnapToGridChange,
+    hideNodeConnections = false,
+    onHideNodeConnectionsChange,
+    isMiniMapOpen,
+    onToggleMiniMap,
+    workspacePanelOpen,
+    workspacePanelTab,
+    onOpenWorkspaceNodes,
+    onOpenWorkspaceAssets,
+    onOpenShortcuts,
+    containerRef,
+}: CanvasZoomControlsProps) {
+    const theme = canvasThemes[useActiveTheme()];
     const rootRef = useRef<HTMLDivElement>(null);
     const liveScaleRef = useRef(scale);
     const rangeRef = useRef<HTMLInputElement>(null);
     const dockLabelRef = useRef<HTMLSpanElement>(null);
     const panelLabelRef = useRef<HTMLSpanElement>(null);
-    const triggerRef = useRef<HTMLButtonElement>(null);
-    const panelRef = useRef<HTMLDivElement>(null);
-    const panelId = useId();
-    const scaleDescriptionId = useId();
-    const targetPercent = useCanvasZoomPercent(scale);
     const [precisionOpen, setPrecisionOpen] = useState(false);
+    const [precisionPanelLeft, setPrecisionPanelLeft] = useState(0);
 
     useLayoutEffect(() => {
         const root = rootRef.current;
@@ -44,6 +69,14 @@ export function CanvasZoomControls({ scale, onScaleChange, onFitContent, onAutoA
         const toolbar = main?.querySelector<HTMLElement>(".canvas-main-toolbar");
         const dock = toolbar?.querySelector<HTMLElement>(":scope > .canvas-floating-dock");
         if (!root || !shell || !main || !toolbar || !dock) return;
+        if (toolbar.classList.contains("is-rail")) {
+            shell.style.removeProperty("bottom");
+            shell.style.removeProperty("max-width");
+            delete shell.dataset.bottomLayout;
+            toolbar.style.removeProperty(MAIN_TOOLBAR_SHIFT);
+            toolbar.style.removeProperty(MAIN_TOOLBAR_MAX_WIDTH);
+            return;
+        }
         // 停靠的 Agent 会让工作区让出右侧宽度（user-layout 写 data-agent-docked）；收起或浮窗时 Agent 悬浮在画布上，不占宽度。
         const workspace = main.closest<HTMLElement>(".app-user-workspace");
         // Share one bottom row with the main toolbar, measured from real widths (toolbar preferences, side panels, docked Agent):
@@ -90,20 +123,14 @@ export function CanvasZoomControls({ scale, onScaleChange, onFitContent, onAutoA
         };
     }, []);
 
-    const updateScaleDisplay = useCallback(
-        (nextScale: number) => {
-            const previousPercent = Math.round(liveScaleRef.current * 100);
-            liveScaleRef.current = nextScale;
-            const percent = Math.round(nextScale * 100);
-            if (percent === previousPercent) return;
-            targetPercent.set(percent);
-            const label = `${percent}%`;
-            if (rangeRef.current && rangeRef.current.value !== String(percent)) rangeRef.current.value = String(percent);
-            if (dockLabelRef.current && dockLabelRef.current.textContent !== label) dockLabelRef.current.textContent = label;
-            if (panelLabelRef.current && panelLabelRef.current.textContent !== label) panelLabelRef.current.textContent = label;
-        },
-        [targetPercent],
-    );
+    const updateScaleDisplay = useCallback((nextScale: number) => {
+        liveScaleRef.current = nextScale;
+        const percent = String(Math.round(nextScale * 100));
+        if (rangeRef.current && rangeRef.current.value !== percent) rangeRef.current.value = percent;
+        if (dockLabelRef.current && dockLabelRef.current.textContent !== percent) dockLabelRef.current.textContent = percent;
+        const label = `${percent}%`;
+        if (panelLabelRef.current && panelLabelRef.current.textContent !== label) panelLabelRef.current.textContent = label;
+    }, []);
 
     useEffect(() => updateScaleDisplay(scale), [scale, updateScaleDisplay]);
 
@@ -115,15 +142,11 @@ export function CanvasZoomControls({ scale, onScaleChange, onFitContent, onAutoA
 
     useEffect(() => {
         if (!precisionOpen) return;
-        panelRef.current?.querySelector("button")?.focus({ preventScroll: true });
         const close = (event: PointerEvent) => {
-            if (event.target instanceof Node && !panelRef.current?.contains(event.target) && !triggerRef.current?.contains(event.target)) setPrecisionOpen(false);
+            if (event.target instanceof Node && !rootRef.current?.contains(event.target)) setPrecisionOpen(false);
         };
         const closeOnEscape = (event: KeyboardEvent) => {
-            if (event.key !== "Escape") return;
-            event.stopPropagation();
-            setPrecisionOpen(false);
-            triggerRef.current?.focus({ preventScroll: true });
+            if (event.key === "Escape") setPrecisionOpen(false);
         };
         document.addEventListener("pointerdown", close, true);
         document.addEventListener("keydown", closeOnEscape, true);
@@ -139,101 +162,112 @@ export function CanvasZoomControls({ scale, onScaleChange, onFitContent, onAutoA
         onScaleChange(clampedScale);
     }
 
-    const modifier = /Mac|iPhone|iPad/.test(navigator.platform) ? "⌘" : "Ctrl ";
-    const connectionLabel = hideNodeConnections ? "显示全部连线" : "设置隐藏节点连线";
-    const mapLabel = isMiniMapOpen ? "关闭小地图" : "打开小地图";
+    const items: FloatingDockEntry[] = [
+        ...(onOpenWorkspaceAssets ? [{ id: "workspace-assets", label: "资产管理", icon: <Images />, active: workspacePanelOpen === true && workspacePanelTab === "assets", onClick: onOpenWorkspaceAssets }] : []),
+        ...(onOpenWorkspaceNodes ? [{ id: "workspace-nodes", label: "画布节点", icon: <Layers3 />, active: workspacePanelOpen === true && workspacePanelTab === "nodes", onClick: onOpenWorkspaceNodes }] : []),
+        ...(onOpenWorkspaceNodes || onOpenWorkspaceAssets ? [{ kind: "separator" as const, id: "workspace-separator" }] : []),
+        { id: "zoom-minimap", label: isMiniMapOpen ? "关闭小地图" : "打开小地图", icon: <Compass />, active: isMiniMapOpen, onClick: onToggleMiniMap },
+        { id: "zoom-fit", label: "适应画布", icon: <Focus />, onClick: onFitContent },
+        ...(onAutoArrange ? [{ id: "zoom-auto-arrange", label: "自动整理节点", icon: <LayoutTemplate />, onClick: onAutoArrange }] : []),
+        ...(onSnapToGridChange ? [{ id: "zoom-snap-to-grid", label: snapToGrid ? "关闭网格吸附" : "开启网格吸附", icon: <Grid3X3 />, active: snapToGrid, onClick: () => onSnapToGridChange(!snapToGrid) }] : []),
+        ...(onHideNodeConnectionsChange
+            ? [
+                  {
+                      id: "zoom-hide-node-connections",
+                      label: hideNodeConnections ? "显示全部连线" : "设置隐藏节点连线",
+                      icon: hideNodeConnections ? <Eye /> : <EyeOff />,
+                      active: hideNodeConnections,
+                      onClick: () => onHideNodeConnectionsChange(!hideNodeConnections),
+                  },
+              ]
+            : []),
+        { kind: "separator", id: "zoom-separator" },
+        {
+            id: "zoom-precision",
+            label: "精确缩放",
+            expands: true,
+            wide: true,
+            quiet: true,
+            icon: (
+                <span className="inline-flex h-full items-center justify-center whitespace-nowrap text-[var(--fs-caption)] font-semibold leading-none tabular-nums">
+                    <span ref={dockLabelRef}>{Math.round(scale * 100)}</span>
+                    <span className="ml-px text-[var(--fs-micro)] font-medium leading-none opacity-50">%</span>
+                </span>
+            ),
+            active: precisionOpen,
+            onClick: (event) => {
+                const root = rootRef.current;
+                const button = event.currentTarget;
+                if (root && button) {
+                    const rootBox = root.getBoundingClientRect();
+                    const buttonBox = button.getBoundingClientRect();
+                    const panelWidth = Math.min(220, Math.max(0, rootBox.width));
+                    setPrecisionPanelLeft(Math.min(Math.max(0, buttonBox.left - rootBox.left + buttonBox.width / 2 - panelWidth / 2), Math.max(0, rootBox.width - panelWidth)));
+                }
+                setPrecisionOpen((value) => !value);
+            },
+        },
+        { kind: "separator", id: "help-separator" },
+        { id: "zoom-shortcuts", label: "画布快捷键", icon: <HelpCircle />, onClick: onOpenShortcuts },
+    ];
 
     return (
         <div ref={rootRef} data-canvas-no-zoom className="canvas-zoom-controls relative z-[var(--z-toolbar)]" onMouseDown={(event) => event.stopPropagation()} onPointerDown={(event) => event.stopPropagation()} onWheel={(event) => event.stopPropagation()}>
-            <div className="canvas-view-pill" role="group" aria-label="画布视图控制">
-                {onAutoArrange && (
-                    <button type="button" aria-label="自动整理节点" title="自动整理节点" onClick={onAutoArrange}>
-                        <Grip />
-                    </button>
-                )}
-                {onHideNodeConnectionsChange && (
-                    <button type="button" aria-label={connectionLabel} title={connectionLabel} aria-pressed={hideNodeConnections} onClick={() => onHideNodeConnectionsChange(!hideNodeConnections)}>
-                        <CircleDashed />
-                    </button>
-                )}
-                {(onAutoArrange || onHideNodeConnectionsChange) && <i className="canvas-view-divider" aria-hidden />}
-                <button
-                    ref={triggerRef}
-                    type="button"
-                    className="canvas-view-scale"
-                    aria-label="精确缩放"
-                    title="精确缩放"
-                    aria-describedby={scaleDescriptionId}
-                    aria-expanded={precisionOpen}
-                    aria-haspopup="dialog"
-                    aria-controls={precisionOpen ? panelId : undefined}
-                    onClick={() => setPrecisionOpen(!precisionOpen)}
-                >
-                    <Search />
-                    <span ref={dockLabelRef} id={scaleDescriptionId} className="sr-only">
-                        {Math.round(scale * 100)}%
-                    </span>
-                    <CanvasZoomReadout target={targetPercent} />
-                </button>
-                {precisionOpen && (
-                    <div
-                        ref={panelRef}
-                        id={panelId}
-                        className="canvas-zoom-menu"
-                        role="dialog"
-                        aria-label="画布缩放"
+            <AnimatePresence>
+                {precisionOpen ? (
+                    <motion.div
+                        initial={{ opacity: 0, y: 4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: aceternityMotion.duration.panel }}
+                        className="aceternity-floating-panel absolute bottom-full mb-2 w-[220px] max-w-full overflow-hidden rounded-[var(--panel-radius)] border p-2"
+                        style={{ left: precisionPanelLeft, background: theme.node.panel, borderColor: theme.toolbar.border, color: theme.node.text, boxShadow: "var(--elevation-overlay)" }}
                         data-canvas-wheel-scroll
-                        onBlur={(event) => {
-                            if (event.relatedTarget && !event.currentTarget.contains(event.relatedTarget) && event.relatedTarget !== triggerRef.current) setPrecisionOpen(false);
-                        }}
-                        onKeyDown={(event) => {
-                            if (event.target instanceof HTMLInputElement || !["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) return;
-                            event.preventDefault();
-                            event.stopPropagation();
-                            const buttons = Array.from(event.currentTarget.querySelectorAll("button"));
-                            const index = buttons.indexOf(event.target as HTMLButtonElement);
-                            const next = event.key === "Home" ? 0 : event.key === "End" ? buttons.length - 1 : (index + (event.key === "ArrowDown" ? 1 : -1) + buttons.length) % buttons.length;
-                            buttons[next]?.focus();
-                        }}
                     >
-                        <button type="button" aria-label="放大画布" onClick={() => commitScale(liveScaleRef.current + 0.1)}>
-                            <Plus />
-                            放大<kbd>{modifier}+</kbd>
-                        </button>
-                        <button type="button" aria-label="缩小画布" onClick={() => commitScale(liveScaleRef.current - 0.1)}>
-                            <Minus />
-                            缩小<kbd>{modifier}−</kbd>
-                        </button>
-                        <hr />
-                        <button type="button" aria-label="适应画布" onClick={onFitContent}>
-                            <Focus />
-                            适应画布<kbd>{modifier}2</kbd>
-                        </button>
-                        <button type="button" onClick={() => commitScale(1)}>
-                            <RotateCcw />
-                            缩放到 100%<kbd>{modifier}0</kbd>
-                        </button>
-                        <hr />
-                        <div className="canvas-zoom-range-row">
-                            <input ref={rangeRef} type="range" min="5" max="200" step="1" defaultValue={Math.round(liveScaleRef.current * 100)} onChange={(event) => commitScale(Number(event.target.value) / 100)} aria-label="精确缩放画布" />
-                            <span ref={panelLabelRef}>{Math.round(liveScaleRef.current * 100)}%</span>
+                        <div className="flex items-center justify-between gap-3">
+                            <span>
+                                <span className="block text-[var(--fs-tiny)] font-semibold">画布尺度</span>
+                                <span className="mt-0.5 block text-[var(--fs-micro)]" style={{ color: theme.node.muted }}>
+                                    精确控制视野密度
+                                </span>
+                            </span>
+                            <span
+                                ref={panelLabelRef}
+                                className="rounded-[var(--r-sm)] px-2 py-1 text-[var(--fs-caption)] font-medium tabular-nums"
+                                style={{ background: theme.spatial.surface, borderColor: theme.toolbar.border, color: theme.accent.primary }}
+                            >
+                                {Math.round(scale * 100)}%
+                            </span>
                         </div>
-                        <div className="canvas-zoom-stops">
+                        <input
+                            ref={rangeRef}
+                            type="range"
+                            min="5"
+                            max="200"
+                            step="1"
+                            defaultValue={Math.round(scale * 100)}
+                            className="aceternity-zoom-range mt-3 h-4 w-full"
+                            style={{ accentColor: theme.accent.primary }}
+                            onChange={(event) => commitScale(Number(event.target.value) / 100)}
+                            aria-label="精确缩放画布"
+                        />
+                        <div className="mt-2 grid grid-cols-4 gap-1">
                             {QUICK_ZOOM_LEVELS.map((level) => (
-                                <button type="button" key={level} onClick={() => commitScale(level)}>
+                                <motion.button
+                                    key={level}
+                                    type="button"
+                                    className="h-7 rounded-[var(--dock-item-radius)] border text-[var(--fs-micro)] font-semibold tabular-nums outline-none focus-visible:ring-2"
+                                    style={{ background: theme.spatial.surface, borderColor: theme.toolbar.border, color: theme.node.muted }}
+                                    onClick={() => commitScale(level)}
+                                >
                                     {Math.round(level * 100)}%
-                                </button>
+                                </motion.button>
                             ))}
                         </div>
-                    </div>
-                )}
-                <button type="button" aria-label={mapLabel} title={mapLabel} aria-pressed={isMiniMapOpen} onClick={onToggleMiniMap}>
-                    <Map />
-                </button>
-            </div>
-            <button type="button" className="canvas-view-help" aria-label="画布快捷键" title="画布快捷键" onClick={onOpenShortcuts}>
-                <HelpCircle />
-            </button>
+                    </motion.div>
+                ) : null}
+            </AnimatePresence>
+            <FloatingDock items={items} variant="toolbar" size="compact" className="canvas-floating-dock canvas-bottom-dock is-bare" style={canvasDockStyle(theme, theme.node.text)} ariaLabel="画布视图控制" />
         </div>
     );
 }

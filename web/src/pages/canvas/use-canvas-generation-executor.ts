@@ -288,6 +288,7 @@ export function useCanvasGenerationExecutor({
                         videoStartFrameNodeId: mode === "video" ? sourceNode?.metadata?.videoStartFrameNodeId : undefined,
                         videoEndFrameNodeId: mode === "video" ? sourceNode?.metadata?.videoEndFrameNodeId : undefined,
                         audioInstructions: generationConfig.audioInstructions,
+                        instrumental: generationConfig.audioInstrumental,
                         audioEmotionControlMethod: generationConfig.audioEmotionControlMethod,
                         audioEmotionRandom: generationConfig.audioEmotionRandom,
                         audioEmotionHappy: generationConfig.audioEmotionHappy,

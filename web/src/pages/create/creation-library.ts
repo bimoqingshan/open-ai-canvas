@@ -4,10 +4,11 @@ import type { CreationMode } from "@/lib/creation-mode";
 import type { CreationReferenceLimits } from "./creation-references";
 import { creationAttachmentFromAsset, creationAttachmentFromAudioAsset, creationAttachmentFromExternalAsset, creationAttachmentFromVideoAsset, type CreationAttachment } from "./creation-assets";
 
-export function creationLibraryDisabledReason(mode: CreationMode, kind: string | undefined, videoLimits?: CreationReferenceLimits, textOnly = false) {
-    if (textOnly) return kind === "text" ? undefined : "当前空间仅支持文本参考";
+export function creationLibraryDisabledReason(mode: CreationMode, kind: string | undefined, videoLimits?: CreationReferenceLimits, teamMode = false) {
     if (kind !== "image" && kind !== "video" && kind !== "audio") return translate("create.library.unsupportedKind");
     if (mode === "image") return kind === "image" ? undefined : translate("create.library.imageOnly");
+    if (mode === "audio") return kind === "audio" ? undefined : translate("create.library.audioOnly");
+    if (teamMode && kind === "audio") return "团队空间暂不支持此模式的音频参考";
     if (mode !== "video") return undefined;
 
     const maximum = kind === "image" ? videoLimits?.maxImages : kind === "video" ? videoLimits?.maxVideos : videoLimits?.maxAudios;
@@ -15,13 +16,13 @@ export function creationLibraryDisabledReason(mode: CreationMode, kind: string |
     return kind === "video" ? translate("create.library.videoModelNoVideo") : kind === "audio" ? translate("create.library.videoModelNoAudio") : translate("create.library.videoModelNoImage");
 }
 
-export function creationLibrarySelectionToAttachments(ids: string[], items: AssetLibraryPickerItem[], mode: CreationMode, videoLimits?: CreationReferenceLimits): CreationAttachment[] {
+export function creationLibrarySelectionToAttachments(ids: string[], items: AssetLibraryPickerItem[], mode: CreationMode, videoLimits?: CreationReferenceLimits, teamMode = false): CreationAttachment[] {
     const itemsById = new Map(items.map((item) => [item.id, item]));
     return ids.map((id) => {
         const item = itemsById.get(id);
         if (!item) throw new Error(translate("create.library.selectionMissing"));
         const kind = item.external?.item.kind || item.asset?.kind;
-        const disabledReason = item.disabledReason || creationLibraryDisabledReason(mode, kind, videoLimits);
+        const disabledReason = item.disabledReason || creationLibraryDisabledReason(mode, kind, videoLimits, teamMode);
         if (disabledReason) throw new Error(translate("create.library.itemDisabled", { title: item.title, reason: disabledReason }));
         if (item.external) return creationAttachmentFromExternalAsset(item.external);
         const asset = item.asset;

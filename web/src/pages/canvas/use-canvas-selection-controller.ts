@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type Dispatch, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, type RefObject, type SetStateAction } from "react";
 
 import { applyCanvasNodeDragPreview, applyCanvasNodeSelectionPreview, applyCanvasSelectionPreview } from "@/lib/canvas/canvas-live-viewport";
+import { snapCanvasNodeDragOffset } from "@/lib/canvas/canvas-grid-snap";
 import { calculateNodeAlignment, createNodeAlignmentContext, sameStringSet, type NodeAlignmentContext } from "@/lib/canvas/canvas-project-domain";
 import { applyFrameDrop, buildCanvasFrameDropIndex, findFrameDropTargetFromIndex, getFrameChildIds, isFrameNode } from "@/lib/canvas/canvas-frame";
 import {
@@ -34,6 +35,8 @@ type UseCanvasSelectionControllerOptions = {
     onBatchConnectionTarget?: (event: ReactMouseEvent | ReactPointerEvent, nodeId: string) => boolean;
     onLinkedFolderDrop?: (folder: CanvasNodeData, nodes: CanvasNodeData[]) => void;
     onDeselect: () => void;
+    snapToGrid?: boolean;
+    gridSize?: number;
 };
 
 type DragState = {
@@ -83,6 +86,8 @@ export function useCanvasSelectionController({
     onBatchConnectionTarget,
     onLinkedFolderDrop,
     onDeselect,
+    snapToGrid = false,
+    gridSize = 24,
 }: UseCanvasSelectionControllerOptions) {
     const dragFrameRef = useRef<number | null>(null);
     const pendingNodeDragRef = useRef<Position>({ x: 0, y: 0 });
@@ -256,7 +261,8 @@ export function useCanvasSelectionController({
             const rawOffset = { x: world.x - dragRef.current.startWorld.x, y: world.y - dragRef.current.startWorld.y };
             const initialPositions = dragRef.current.initialSelectedNodes;
             const initialById = new Map(initialPositions.map((item) => [item.id, item]));
-            const { x: dx, y: dy } = calculateNodeAlignment(alignmentContextRef.current, rawOffset, 7 / currentViewport.k).offset;
+            const alignedOffset = calculateNodeAlignment(alignmentContextRef.current, rawOffset, 7 / currentViewport.k).offset;
+            const { x: dx, y: dy } = snapCanvasNodeDragOffset(alignedOffset, initialPositions[0], gridSize, snapToGrid);
 
             historyPausedRef.current = false;
             nodeDraggingRef.current = false;
@@ -293,7 +299,7 @@ export function useCanvasSelectionController({
                 if (clickedNode) onNodeClick(clickedNode);
             }
         },
-        [historyPausedRef, nodesRef, onLinkedFolderDrop, onNodeClick, onNodeDragEnd, screenToCanvas, setNodes, viewportRef],
+        [gridSize, historyPausedRef, nodesRef, onLinkedFolderDrop, onNodeClick, onNodeDragEnd, screenToCanvas, setNodes, snapToGrid, viewportRef],
     );
 
     const handleNodeDragMove = useCallback(
@@ -309,7 +315,7 @@ export function useCanvasSelectionController({
             if (dragFrameRef.current) return;
             dragFrameRef.current = requestAnimationFrame(() => {
                 const aligned = calculateNodeAlignment(alignmentContextRef.current, pendingNodeDragRef.current, 7 / viewportRef.current.k);
-                const latest = aligned.offset;
+                const latest = snapCanvasNodeDragOffset(aligned.offset, dragRef.current.initialSelectedNodes[0], gridSize, snapToGrid);
                 const now = performance.now();
                 if (now - lastFrameDropCheckRef.current >= 100) {
                     lastFrameDropCheckRef.current = now;
@@ -320,7 +326,7 @@ export function useCanvasSelectionController({
                 dragFrameRef.current = null;
             });
         },
-        [containerRef, screenToCanvas, viewportRef],
+        [containerRef, gridSize, screenToCanvas, snapToGrid, viewportRef],
     );
 
     const updateSelectionPreview = useCallback(
