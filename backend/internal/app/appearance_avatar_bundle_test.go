@@ -74,10 +74,10 @@ func TestAgentAvatarBundleArchiveValidation(t *testing.T) {
 	}
 }
 
-func TestDefaultCanvasAppearanceUsesBuiltInAvatarBundle(t *testing.T) {
+func TestDefaultCanvasAppearanceUsesThemeOrb(t *testing.T) {
 	value := defaultCanvasAppearance()
-	if value.AvatarType != "bundle" || value.AvatarBundleResourceID != "" {
-		t.Fatalf("default canvas appearance = %+v, want built-in avatar bundle", value)
+	if value.AvatarType != "orb" || value.AvatarBundleResourceID != "" {
+		t.Fatalf("default canvas appearance = %+v, want theme orb", value)
 	}
 	wantStates := map[string]string{
 		"idle": "idle", "queued": "sleep_loop", "running": "working_loop", "waiting_approval": "think",
@@ -87,7 +87,15 @@ func TestDefaultCanvasAppearanceUsesBuiltInAvatarBundle(t *testing.T) {
 		t.Fatalf("default clip mapping = %#v", value.AvatarClipStates)
 	}
 	if _, err := normalizeCanvasAppearance(value); err != nil {
-		t.Fatalf("default bundle rejected: %v", err)
+		t.Fatalf("default appearance rejected: %v", err)
+	}
+	value.AvatarHeight = 50
+	if _, err := normalizeCanvasAppearance(value); err != nil {
+		t.Fatalf("minimum avatar height rejected: %v", err)
+	}
+	value.AvatarHeight = 49
+	if _, err := normalizeCanvasAppearance(value); err == nil {
+		t.Fatal("avatar height below 50 accepted")
 	}
 	invalid := value
 	invalid.AvatarClipStates = map[string]string{"unrecognized": "idle"}

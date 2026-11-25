@@ -324,7 +324,7 @@ export function CreationComposer(props: ComposerProps) {
     const placeholder = props.mode === "text" ? t("create.composer.placeholderText") : props.mode === "image" ? t("create.composer.placeholderImage") : props.mode === "audio" ? t("create.composer.placeholderAudio") : t("create.composer.placeholderVideo");
     const emptyPlaceholder = t("create.composer.emptyPlaceholder");
     const imageReferencesSupported = props.imageProfile.references.maxImages > 0;
-    const referencesSupported = props.mode === "image" ? imageReferencesSupported : props.mode !== "video" || props.maxReferences > 0;
+    const referencesSupported = props.mode === "image" ? imageReferencesSupported : true;
     const canAddMoreReferences = referencesSupported && props.attachments.length < props.maxReferences;
     const addReferenceLabel = interactionBusy
         ? props.referenceReplacementBusy

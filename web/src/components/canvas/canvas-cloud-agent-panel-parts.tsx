@@ -11,7 +11,7 @@ import { agentAvatarClipForState, agentAvatarStateForRunStatus, agentCopy, isAge
 import { type CSSProperties, memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { usePopoverAnchorAlign } from "@/hooks/use-popover-anchor-align";
 import { useAgentLauncherPosition } from "./use-agent-launcher-position";
-import { resolveAgentLauncherAvatarHeight } from "@/lib/canvas/agent-launcher-position";
+import { resolveAgentLauncherAvatarHeight, resolveAgentLauncherOrbSize } from "@/lib/canvas/agent-launcher-position";
 import { matchPath, useLocation } from "react-router";
 import { workspacePagePath } from "@/lib/workspace-routes";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
@@ -131,8 +131,9 @@ export const AgentLauncher = memo(function AgentLauncher({
     const inCanvasEditor = Boolean(matchPath("/canvas/:id", workspacePagePath(useLocation().pathname)));
     // 收起后只留小圆球入口：不加载 Live2D / 动画，也不挡画布。位置以右下角为锚点，收起展开不跳位。
     const keepsAvatarSize = largeAvatar && !collapsed;
-    const height = collapsed ? AGENT_LAUNCHER_COLLAPSED_SIZE : keepsAvatarSize ? resolveAgentLauncherAvatarHeight(appearance.avatarHeight, aspectRatio, viewport, inCanvasEditor) : 76;
-    const width = collapsed ? AGENT_LAUNCHER_COLLAPSED_SIZE : keepsAvatarSize ? Math.round(height * aspectRatio) : 76;
+    const orbSize = resolveAgentLauncherOrbSize(appearance.avatarHeight);
+    const height = collapsed ? AGENT_LAUNCHER_COLLAPSED_SIZE : keepsAvatarSize ? resolveAgentLauncherAvatarHeight(appearance.avatarHeight, aspectRatio, viewport, inCanvasEditor) : orbSize;
+    const width = collapsed ? AGENT_LAUNCHER_COLLAPSED_SIZE : keepsAvatarSize ? Math.round(height * aspectRatio) : orbSize;
     const { position, dragging, handlers } = useAgentLauncherPosition(onOpen, width, height, inCanvasEditor);
     const { onClick, onKeyDown, onDoubleClick, ...pointerHandlers } = handlers;
     // 大形象的外框大多是透明像素：外框不接收指针，只有身体热区可点、可拖，透明处的点击落到下面的页面。
@@ -193,7 +194,7 @@ export const AgentLauncher = memo(function AgentLauncher({
                         onError={() => setMediaError(true)}
                     />
                 ) : bundleManifestLoading ? null : (
-                    <AgentOrb state={agentOrbStateForAvatar(avatarState)} size={60} color="#7164f6" />
+                    <AgentOrb state={agentOrbStateForAvatar(avatarState)} size={orbSize} color="#7164f6" />
                 )}
                 {avatarLoading ? (
                     <span className="canvas-agent-launcher-label canvas-agent-launcher-loading" role="status" aria-busy="true" {...pointerHandlers}>

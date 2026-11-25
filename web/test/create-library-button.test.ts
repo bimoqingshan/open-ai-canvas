@@ -65,7 +65,7 @@ describe("creation library button", () => {
 
         expect(source).toContain('modelGroupReferenceLimits(config, preferredModel || selectedModel, "video")');
         expect(source).toContain("reconcileCreationAttachmentLimits(attachments, mentionReferences, videoReferenceLimits)");
-        expect(workspace).toContain('props.mode !== "video" || props.maxReferences > 0');
+        expect(workspace).toContain('const referencesSupported = props.mode === "image" ? imageReferencesSupported : true;');
         expect(workspace).not.toContain('props.videoProfile.operations.includes("image_to_video")');
     });
 

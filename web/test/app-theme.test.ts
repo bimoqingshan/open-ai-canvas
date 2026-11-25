@@ -43,5 +43,10 @@ describe("shared action colors and focus feedback", () => {
         expect(theme.components?.Button?.colorPrimary).toBeUndefined();
         expect(theme.components?.Button?.primaryColor).toBeUndefined();
         expect(theme.components?.Input?.activeShadow).toBe("none");
+        expect(theme.token?.colorBorder).toBe("var(--user-border)");
+        expect(theme.components?.Tag).toMatchObject({
+            defaultBg: "var(--user-surface-muted)",
+            defaultColor: "var(--user-ink)",
+        });
     });
 });

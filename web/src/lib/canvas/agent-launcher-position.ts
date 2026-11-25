@@ -10,6 +10,11 @@ const LAUNCHER_LABEL_CLEARANCE = 40;
 export const AGENT_LAUNCHER_COMPACT_AVATAR_HEIGHT = 120;
 export const AGENT_LAUNCHER_COMPACT_VIEWPORT_WIDTH = 768;
 
+/** Orb 沿用小入口的默认上限，但允许较小的外观高度缩小圆环。 */
+export function resolveAgentLauncherOrbSize(preferred: number) {
+    return Math.max(40, Math.min(preferred, AGENT_LAUNCHER_SIZE));
+}
+
 /** 大形象（Live2D / 动画包）的入口高度：受外观设置、视口和宽高比约束，离开画布编辑器或窄屏时再封顶。 */
 export function resolveAgentLauncherAvatarHeight(preferred: number, aspectRatio: number, viewport: AgentLauncherViewport, inCanvasEditor: boolean) {
     const compact = !inCanvasEditor || viewport.width < AGENT_LAUNCHER_COMPACT_VIEWPORT_WIDTH;

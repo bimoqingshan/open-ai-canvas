@@ -27,7 +27,7 @@ func defaultCanvasAppearance() CanvasAppearance {
 		WelcomeTitle:       "在这里，和{agentName}让灵感，慢慢成形",
 		WelcomeDescription: "从一个想法开始，和{agentName}一起创作。",
 		InputPlaceholder:   "输入操作指导；用 @ 引用画布节点，用 / 或 、 引用 Skills",
-		AvatarType:         "bundle",
+		AvatarType:         "orb",
 		AvatarClipStates: map[string]string{
 			"idle": "idle", "queued": "sleep_loop", "running": "working_loop", "waiting_approval": "think",
 			"completed": "wave", "failed": "wipe_sweat", "cancelled": "lie_down", "rejected": "think",
@@ -64,8 +64,8 @@ func normalizeCanvasAppearance(value CanvasAppearance) (CanvasAppearance, error)
 	if value.AvatarType != "orb" && value.AvatarType != "live2d" && value.AvatarType != "bundle" {
 		return value, BadAuthRequest("请选择有效的 Agent 形象类型")
 	}
-	if value.AvatarHeight < 120 || value.AvatarHeight > 360 {
-		return value, BadAuthRequest("形象高度须在 120–360 之间")
+	if value.AvatarHeight < 50 || value.AvatarHeight > 360 {
+		return value, BadAuthRequest("形象高度须在 50–360 之间")
 	}
 	if value.AvatarType == "live2d" && value.Live2DResourceID == "" {
 		return value, BadAuthRequest("请先导入 Live2D 模型")

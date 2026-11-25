@@ -269,7 +269,7 @@ export function CanvasAppearanceEditor({ value, onChange, disabled, onUploading 
                 </div>
                 <label className="flex items-center gap-3 text-sm">
                     形象高度
-                    <InputNumber aria-label="形象高度" min={120} max={360} value={value.avatarHeight} disabled={disabled || uploading} onChange={(height) => height !== null && change({ avatarHeight: height })} />
+                    <InputNumber aria-label="形象高度" min={50} max={360} value={value.avatarHeight} disabled={disabled || uploading} onChange={(height) => height !== null && change({ avatarHeight: height })} />
                     px
                 </label>
                 <div className="grid justify-items-center gap-3 rounded-xl border border-border bg-background p-5" aria-label="Agent 形象预览">
@@ -280,7 +280,7 @@ export function CanvasAppearanceEditor({ value, onChange, disabled, onUploading 
                             width={Math.round(value.avatarHeight * 0.75)}
                             height={value.avatarHeight}
                             reducedMotion={reducedMotion}
-                            fallback={<AgentOrb size={60} color="#7164f6" />}
+                            fallback={<AgentOrb size={Math.min(60, Math.max(40, value.avatarHeight))} color="#7164f6" />}
                             // 预览期间由预览框独占 Live2D 渲染，悬浮入口临时显示默认球。
                             renderPriority={1}
                             onReady={() => {
@@ -303,7 +303,7 @@ export function CanvasAppearanceEditor({ value, onChange, disabled, onUploading 
                             <AgentAvatarVideo src={previewBundleURL} loop={!["completed", "failed"].includes(selectedAvatarState)} />
                         </div>
                     ) : (
-                        <AgentOrb size={60} color="#7164f6" />
+                        <AgentOrb size={Math.min(60, Math.max(40, value.avatarHeight))} color="#7164f6" />
                     )}
                     <strong>{agentCopy(value.welcomeTitle, value.agentName)}</strong>
                     <p className="text-sm text-foreground/60">{agentCopy(value.welcomeDescription, value.agentName)}</p>

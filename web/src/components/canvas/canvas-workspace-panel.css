@@ -150,22 +150,22 @@
     flex: 1;
     width: min(100%, var(--canvas-workspace-open-width));
     border-top: 0;
-    border-radius: 0 0 var(--r-2xl) var(--r-2xl);
+    position: relative;
+    border-radius: 0 var(--r-2xl) var(--r-2xl) var(--r-2xl);
 }
 @container (max-width: 48rem) {
     .canvas-workspace-corner.is-expanded > .canvas-workspace-shell {
-        border-top-right-radius: var(--r-2xl);
         margin-bottom: var(--canvas-topbar-offset);
     }
-    .canvas-workspace-corner.is-expanded > .canvas-workspace-shell::before {
-        content: "";
-        position: absolute;
-        inset: 0 calc(-1 * var(--stroke-1)) auto calc(50cqi - var(--space-2) - var(--stroke-1));
-        height: var(--r-2xl);
-        border-top: var(--stroke-1) solid var(--canvas-workspace-outline);
-        border-top-right-radius: inherit;
-        pointer-events: none;
-    }
+}
+.canvas-workspace-corner.is-expanded > .canvas-workspace-shell::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 50%;
+    height: var(--r-2xl);
+    border-top: var(--stroke-1) solid var(--canvas-workspace-outline);
+    border-top-right-radius: inherit;
+    pointer-events: none;
 }
 .canvas-workspace-panel > :is(header, .border-b) {
     border-bottom: 0 !important;

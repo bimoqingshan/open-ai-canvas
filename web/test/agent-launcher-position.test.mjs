@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import { fileURLToPath } from "node:url";
 import { runInNewContext } from "node:vm";
-import { clampAgentLauncherPosition, moveAgentLauncher, restoreAgentLauncherPosition } from "../src/lib/canvas/agent-launcher-position";
+import { clampAgentLauncherPosition, moveAgentLauncher, resolveAgentLauncherOrbSize, restoreAgentLauncherPosition } from "../src/lib/canvas/agent-launcher-position";
 
 const viewport = { width: 1280, height: 800 };
 const start = { right: 20, bottom: 20 };
@@ -33,6 +33,12 @@ test("the default workspace anchor clears pagination without moving an editor or
     expect(restoreAgentLauncherPosition(null, mobile, undefined, false).bottom).toBe(184);
     expect(restoreAgentLauncherPosition(null, mobile, undefined, true)).toEqual(start);
     expect(restoreAgentLauncherPosition(JSON.stringify(start), mobile, undefined, false)).toEqual(start);
+});
+
+test("orb size follows small appearance heights without enlarging legacy defaults", () => {
+    expect(resolveAgentLauncherOrbSize(50)).toBe(50);
+    expect(resolveAgentLauncherOrbSize(76)).toBe(76);
+    expect(resolveAgentLauncherOrbSize(220)).toBe(76);
 });
 
 test("small pointer jitter remains a click, but dragging back to the origin remains a drag", () => {

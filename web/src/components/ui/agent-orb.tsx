@@ -1,4 +1,4 @@
-import { FluidOrb } from "@/components/ui/fluid-orb";
+import { CraneOrb } from "@/themes/yunhe-xianguan/marks";
 import type { ThemeAgentOrbState } from "@/themes/types";
 import { useThemePack } from "@/themes/use-theme-pack";
 
@@ -11,8 +11,9 @@ export function agentOrbStateForAvatar(avatarState: string): AgentOrbState {
     return "idle";
 }
 
-/** 助手圆球：当前皮肤的主题包带了助手形象就用它，否则用上游流光球。 */
-export function AgentOrb({ size = 60, state = "idle", color, className }: { size?: number; state?: AgentOrbState; color?: string; className?: string }) {
+/** 助手圆球：优先使用当前皮肤主题包的形象，未定义时使用云鹤圆窗。 */
+export function AgentOrb({ size = 60, state = "idle", className }: { size?: number; state?: AgentOrbState; color?: string; className?: string }) {
     const ThemeOrb = useThemePack()?.agentOrb;
-    return ThemeOrb ? <ThemeOrb size={size} state={state} className={className} /> : <FluidOrb size={size} color={color} className={className} />;
+    const Orb = ThemeOrb ?? CraneOrb;
+    return <Orb size={size} state={state} className={className} />;
 }

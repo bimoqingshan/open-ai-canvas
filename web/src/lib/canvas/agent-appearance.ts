@@ -89,7 +89,7 @@ export const DEFAULT_CANVAS_APPEARANCE: CanvasAppearance = {
     welcomeTitle: "在这里，和{agentName}让灵感，慢慢成形",
     welcomeDescription: "从一个想法开始，和{agentName}一起创作。",
     inputPlaceholder: "输入操作指导；用 @ 引用画布节点，用 / 或 、 引用 Skills",
-    avatarType: "bundle",
+    avatarType: "orb",
     live2dResourceId: "",
     live2dEntry: "",
     avatarBundleResourceId: "",

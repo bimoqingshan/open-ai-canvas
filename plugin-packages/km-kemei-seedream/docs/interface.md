@@ -66,7 +66,7 @@ Pro / Flash 不支持 sequential_image_generation、组图、联网搜索、流�
   "apiVersion": "yingce.plugin/v2",
   "id": "km-kemei-seedream",
   "name": "KM 可美 Seedream 5.0",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "author": "KM 可美 / 影绘",
   "description": "适配可美 Seedream 5.0 Pro 与 Flash，单张生成、参考图与全部结果提取。",
   "enabled": true,

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { getAuthSession, invalidateAuthSessionCache } from "@/services/api/auth";
 import { FullScreenLoader } from "@/components/ui/aceternity/full-screen-loader";
 import { WorkspaceErrorState } from "@/components/layout/workspace-state";
+import { ApiError } from "@/services/api/request";
 import { appQueryClient } from "@/lib/query-client";
 import { PageResourceError } from "@/lib/module-preload";
 import { PageResourceErrorState } from "@/components/layout/page-resource-error-state";
@@ -14,7 +15,7 @@ import { recordDiagnosticEvent } from "@/services/diagnostics/client-diagnostics
 
 export function AuthSessionHydrator({ children }: { children: ReactNode }) {
     const hydrated = useUserStore((state) => state.hydrated);
-    const [recoveryFailed, setRecoveryFailed] = useState<"session" | "workspace" | PageResourceError | null>(null);
+    const [recoveryFailed, setRecoveryFailed] = useState<"session" | "workspace" | "unavailable" | PageResourceError | null>(null);
     const [retry, setRetry] = useState(0);
 
     useEffect(() => {
@@ -67,7 +68,7 @@ export function AuthSessionHydrator({ children }: { children: ReactNode }) {
                 if (payload.user) preloadWorkspaceRoute(window.location.pathname);
             } catch (error) {
                 if (isCurrent() && !(error instanceof DOMException && error.name === "AbortError")) {
-                    const failure = error instanceof PageResourceError ? error : phase;
+                    const failure = error instanceof PageResourceError ? error : isBackendUnavailable(error) ? "unavailable" : phase;
                     setRecoveryFailed(failure);
                     recordDiagnosticEvent({
                         category: "navigation",
@@ -90,7 +91,20 @@ export function AuthSessionHydrator({ children }: { children: ReactNode }) {
     if (recoveryFailed) {
         const retryRestore = () => setRetry((value) => value + 1);
         if (recoveryFailed instanceof PageResourceError) return <PageResourceErrorState error={recoveryFailed} onRetry={retryRestore} />;
-        return <WorkspaceErrorState title={recoveryFailed === "session" ? "登录状态恢复失败" : "工作区初始化失败"} description="工作区已暂停，请重试。" onRetry={retryRestore} />;
+        return (
+            <WorkspaceErrorState
+                title={recoveryFailed === "session" ? "登录状态恢复失败" : recoveryFailed === "unavailable" ? undefined : "工作区初始化失败"}
+                description={recoveryFailed === "unavailable" ? undefined : "工作区已暂停，请重试。"}
+                icon={recoveryFailed === "unavailable" ? null : "error"}
+                onRetry={retryRestore}
+            />
+        );
     }
     return hydrated ? children : <FullScreenLoader />;
+}
+
+function isBackendUnavailable(error: unknown) {
+    if (!(error instanceof ApiError)) return false;
+    if (error.status === undefined || error.reason === "unavailable" || error.reason === "bad_gateway" || error.reason === "timeout") return true;
+    return error.status === 502 || error.status === 503 || error.status === 504;
 }

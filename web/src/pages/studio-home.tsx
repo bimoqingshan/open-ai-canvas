@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, type UIEvent as ReactUIEvent } from "react";
+import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent } from "react";
 import { ArrowUp, Search } from "lucide-react";
 import { useNavigate } from "react-router";
 import { useReducedMotion } from "motion/react";
@@ -141,13 +141,27 @@ export default function StudioHomePage() {
         promptFlowRippleFrameRef.current = requestAnimationFrame(animate);
     };
 
-    const handleHomeScroll = (event: ReactUIEvent<HTMLElement>) => {
-        const visible = event.currentTarget.scrollTop > 520;
-        setShowScrollTop((current) => (current === visible ? current : visible));
-    };
+    useEffect(() => {
+        const root = homePageRef.current;
+        if (!root) return;
+
+        const updateScrollTopVisibility = () => {
+            const visible = root.scrollTop > root.clientHeight;
+            setShowScrollTop((current) => (current === visible ? current : visible));
+        };
+
+        root.addEventListener("scroll", updateScrollTopVisibility, { passive: true });
+        window.addEventListener("resize", updateScrollTopVisibility);
+        updateScrollTopVisibility();
+
+        return () => {
+            root.removeEventListener("scroll", updateScrollTopVisibility);
+            window.removeEventListener("resize", updateScrollTopVisibility);
+        };
+    }, []);
 
     return (
-        <main ref={homePageRef} className="home-page hide-scrollbar" onScroll={handleHomeScroll}>
+        <main ref={homePageRef} className="home-page hide-scrollbar">
             <div className="home-page__content">
                 <section
                     className="home-prompt-section home-command-center"
