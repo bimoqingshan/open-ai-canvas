@@ -105,7 +105,7 @@ export const zhCN = {
         placeholderAudio: "描述要朗读或生成的音频内容",
         emptyPlaceholder: "输入你的镜头、画面或故事。也可以添加参考图开始创作",
         cannotAddReferences: "生成中暂不能添加参考内容",
-        addReferences: "添加更多参考内容",
+        addReferences: "参考内容",
         maxReferences: "已达到当前模型的参考内容上限（{{count}} 个）",
         dropBusy: "正在添加参考图…",
         dropHint: "松开添加参考图",

@@ -9,7 +9,7 @@
     border: 1px solid var(--user-border-strong);
     border-radius: 22px;
     background: var(--user-surface);
-    box-shadow: 0 28px 90px color-mix(in srgb, var(--user-ink) 22%, transparent);
+    box-shadow: none;
 }
 
 .workspace-account-management-modal .ant-modal-body {
@@ -174,7 +174,21 @@
 }
 
 .workspace-account-management-scroll > .app-user-content.teams-page-embedded {
+    /* 嵌入的团队页沿用账户弹窗的表面层级，避免独立页面底色形成黑块。 */
+    --background: var(--user-surface-raised);
+    --foreground: var(--user-ink);
+    --muted-foreground: var(--user-ink-muted);
+    --border: var(--user-border);
+    --surface-hover: var(--user-surface-hover);
     background: transparent;
+}
+
+.workspace-account-management-scroll .teams-page-embedded .app-page-header {
+    background: transparent;
+}
+
+.workspace-account-management-scroll .teams-page-embedded .app-page-header p {
+    color: var(--user-ink-muted);
 }
 
 .workspace-account-management-scroll .settings-page-embedded,

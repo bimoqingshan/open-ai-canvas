@@ -3,6 +3,7 @@ import {
     ChevronRight,
     Clapperboard,
     GraduationCap,
+    Home,
     History as HistoryIcon,
     Image as ImageIcon,
     Images,
@@ -80,7 +81,7 @@ function buildNav(features: FeatureAvailability, t: TFunction, canUseSkills: boo
     const groups: WorkspaceNavGroup[] = [
         {
             items: [
-                { ...toolItem("create", "/", t), id: "home", title: t("shell.palette.home") },
+                { ...toolItem("create", "/", t), id: "home", title: t("shell.palette.home"), icon: Home },
                 ...(features.assetsEnabled ? [{ ...toolItem("assets", "/assets", t), title: t("nav.sidebar.assets") }] : []),
                 { ...toolItem("canvas", "/canvas", t), title: t("nav.sidebar.canvas") },
                 ...(canUseSkills ? [{ ...toolItem("skills", "/skills", t), title: t("nav.sidebar.skills") }] : []),

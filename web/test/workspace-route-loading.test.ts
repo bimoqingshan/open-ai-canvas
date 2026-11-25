@@ -72,7 +72,7 @@ describe("workspace route loading", () => {
         expect(router).toMatch(/path: "\/canvas\/:id",\s+element: \(\s+<RequireAuth>\s+<CanvasProjectPage \/>\s+<\/RequireAuth>\s+\),/);
         expect(router).not.toContain('path: "/home"');
         expect(router).not.toContain("deferred(<HomePage />)");
-        expect(navigation).toContain('{ ...toolItem("create", "/", t), id: "home", title: t("shell.palette.home") }');
+        expect(navigation).toMatch(/\{ \.\.\.toolItem\("create", "\/", t\), id: "home", title: t\("shell\.palette\.home"\)(?:, icon: Home)? \}/);
         expect(navigation).toContain('title: t("nav.sidebar.inspirations"), icon: Sparkles, to: "/create"');
         expect(navigation).not.toContain('to: "/home"');
     });
