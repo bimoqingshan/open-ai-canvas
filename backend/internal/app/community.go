@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"regexp"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -51,6 +52,8 @@ type CreatorChallengeRequest struct {
 	EndsAt      *time.Time              `json:"endsAt"`
 	Enabled     bool                    `json:"enabled"`
 }
+
+var challengePosterResourcePattern = regexp.MustCompile(`!\[活动主视觉\]\(resource:([^)]+)\)`)
 
 type CommunityWorkPage struct {
 	Works []model.CommunityWork `json:"works"`
@@ -684,15 +687,34 @@ func (s *Service) SaveCreatorChallenge(actor *model.User, req CreatorChallengeRe
 		return nil, err
 	}
 	id := strings.TrimSpace(req.ID)
-	challenge := &model.CreatorChallenge{ID: id, Title: title, Description: strings.TrimSpace(req.Description), ActivityTag: activityTag, TracksJSON: string(trackJSON), StartsAt: req.StartsAt, EndsAt: req.EndsAt, Enabled: req.Enabled}
-	if id != "" {
+	isNew := id == ""
+	if isNew {
+		id = kernel.NewID()
+	}
+	description := strings.TrimSpace(req.Description)
+	posterResourceID := ""
+	if match := challengePosterResourcePattern.FindStringSubmatch(description); len(match) == 2 {
+		posterResourceID = strings.TrimSpace(match[1])
+		resource, resourceErr := s.repo.ResourceForUser(actor.ID, posterResourceID)
+		if resourceErr != nil {
+			return nil, BadAuthRequest("活动主视觉图片不可用，请重新上传")
+		}
+		if resource.Kind != "image" || resource.Status != model.ResourceStatusReady {
+			return nil, BadAuthRequest("活动主视觉图片尚未上传完成")
+		}
+		description = challengePosterResourcePattern.ReplaceAllString(description, "![活动主视觉](/api/public/linghua/community/challenges/"+url.PathEscape(id)+"/poster)")
+	}
+	challenge := &model.CreatorChallenge{ID: id, Title: title, Description: description, PosterResourceID: posterResourceID, ActivityTag: activityTag, TracksJSON: string(trackJSON), StartsAt: req.StartsAt, EndsAt: req.EndsAt, Enabled: req.Enabled}
+	if !isNew {
 		current, findErr := s.repo.CreatorChallenge(id)
 		if findErr != nil {
 			return nil, NotFound("创作者挑战赛不存在")
 		}
 		challenge.CreatedAt = current.CreatedAt
+		if posterResourceID == "" && strings.Contains(description, "/challenges/"+url.PathEscape(id)+"/poster") {
+			challenge.PosterResourceID = current.PosterResourceID
+		}
 	} else {
-		challenge.ID = kernel.NewID()
 		challenge.CreatedAt = time.Now().UTC()
 	}
 	challenge.UpdatedAt = time.Now().UTC()
@@ -704,6 +726,22 @@ func (s *Service) SaveCreatorChallenge(actor *model.User, req CreatorChallengeRe
 	}
 	view, err := creatorChallengeView(*challenge, time.Now())
 	return &view, err
+}
+
+func (s *Service) PreparePublicCreatorChallengePoster(challengeID, rangeHeader string, options ResourceAccessOptions) (*ResourceDelivery, error) {
+	challenge, err := s.repo.CreatorChallenge(strings.TrimSpace(challengeID))
+	if err != nil {
+		return nil, NotFound("活动不存在")
+	}
+	if challenge.PosterResourceID == "" {
+		return nil, NotFound("活动主视觉不存在")
+	}
+	resource, err := s.repo.Resource(challenge.PosterResourceID)
+	if err != nil || resource.Kind != "image" || resource.Status != model.ResourceStatusReady {
+		return nil, NotFound("活动主视觉不存在")
+	}
+	options = ResourceAccessOptions{Purpose: "display", Variant: options.Variant}
+	return s.prepareResourceDelivery(resource.UserID, resource, options, rangeHeader)
 }
 
 func (s *Service) AdminCreatorChallengeList(actor *model.User) ([]CreatorChallengeView, error) {
@@ -738,7 +776,12 @@ func creatorChallengeView(challenge model.CreatorChallenge, now time.Time) (Crea
 	} else if challenge.StartsAt == nil || !challenge.StartsAt.After(now) {
 		status = "active"
 	}
-	return CreatorChallengeView{CreatorChallenge: challenge, Tracks: tracks, Status: status}, nil
+	view := CreatorChallengeView{CreatorChallenge: challenge, Tracks: tracks, Status: status}
+	if challenge.PosterResourceID != "" {
+		posterURL := "/api/public/linghua/community/challenges/" + url.PathEscape(challenge.ID) + "/poster"
+		view.Description = challengePosterResourcePattern.ReplaceAllString(view.Description, "![活动主视觉]("+posterURL+")")
+	}
+	return view, nil
 }
 
 func parseCreatorChallengeTracks(raw string) ([]CreatorChallengeTrack, error) {

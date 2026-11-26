@@ -28271,7 +28271,7 @@ html:not(.dark) .creation-home .creation-user-message-copy-wrap {
 }
 
 .app-user-workspace :is(.academy-page, .community-page) {
-    background: var(--user-content-page-bg, #f4f4f5) !important;
+    background: var(--workspace-content) !important;
 }
 
 .dark .app-user-workspace .app-workspace-topbar {

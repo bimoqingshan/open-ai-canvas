@@ -12,20 +12,29 @@ package_plugin() {
   package_dir="$root_dir/$package_id"
   output_file="$root_dir/$package_id.yingce-plugin"
   temporary_file="$root_dir/.$package_id.yingce-plugin.tmp"
+  stage=$(mktemp -d)
+  trap 'rm -rf "$stage"' EXIT
   rm -f "$temporary_file"
   (
     cd "$package_dir"
+    paths="manifest.json README.md docs assets web backend LICENSE"
     if [ "$package_id" = kling-v4-official ]; then
-      stage=$(mktemp -d)
-      trap 'rm -rf "$stage"' EXIT
-      cp -R manifest.json README.md docs LICENSE "$stage/"
-      cd "$stage"
-      export TZ=UTC
-      find . -type f -exec chmod 644 {} + -exec touch -t 200001010000 {} +
+      paths="manifest.json README.md docs LICENSE"
     fi
+    for path in $paths; do
+      if [ -e "$path" ]; then cp -R "$path" "$stage/"; fi
+    done
+    cd "$stage"
+    if [ "$package_id" = kling-v4-official ]; then
+      export TZ=UTC
+      find . -type f -exec chmod 644 {} +
+    fi
+    find . -type f -exec touch -t 200001010000 {} +
     find manifest.json README.md docs assets web backend LICENSE -type f 2>/dev/null | LC_ALL=C sort | zip -X -q "$temporary_file" -@
   )
   mv "$temporary_file" "$output_file"
+  rm -rf "$stage"
+  trap - EXIT
 }
 
 if [ "${1:-}" = "--protocol" ] && [ "$#" -eq 2 ]; then

@@ -98,6 +98,15 @@ func RegisterCommunityRoutes(r *gin.RouterGroup, svc *service.Service) {
 		ok(c, gin.H{"challenges": challenges})
 	})
 
+	r.GET("/public/linghua/community/challenges/:id/poster", func(c *gin.Context) {
+		delivery, err := svc.PreparePublicCreatorChallengePoster(c.Param("id"), c.GetHeader("Range"), resourceAccessOptions(c))
+		if err != nil {
+			failService(c, err)
+			return
+		}
+		serveResourceDelivery(c, delivery, "public, max-age=300, stale-while-revalidate=120", "")
+	})
+
 	r.GET("/linghua/community/work-options", func(c *gin.Context) {
 		if _, err := currentUser(c, svc); err != nil {
 			failService(c, err)

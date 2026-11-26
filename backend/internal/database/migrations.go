@@ -13,7 +13,7 @@ import (
 	"gorm.io/gorm"
 )
 
-const CurrentSchemaVersion int64 = 110
+const CurrentSchemaVersion int64 = 115
 
 const baselineSchemaChecksum = "sha256:open-ai-canvas-schema-v1-20260830"
 const schemaMigrationAppliedAtIndexChecksum = "sha256:schema-migrations-applied-at-index-v2-20260830"
@@ -377,29 +377,41 @@ var schemaMigrations = []migration{
 		return tx.AutoMigrate(&model.Team{})
 	}},
 	{version: 108, name: "shared_workspace_content", checksum: "sha256:shared-workspace-content-v108", apply: migrateSharedWorkspaceContent},
-	{version: 109, name: "model_protocol_releases", checksum: "sha256:model-protocol-releases-v109", apply: func(tx *gorm.DB) error {
-		for _, column := range []struct {
-			entity any
-			name   string
-		}{{&model.ChannelModel{}, "ProtocolRelease"}, {&model.Task{}, "ProtocolBindingJSON"}, {&model.RouteAttempt{}, "ProtocolBindingJSON"}} {
-			if !tx.Migrator().HasTable(column.entity) || tx.Migrator().HasColumn(column.entity, column.name) {
-				continue
-			}
-			if err := tx.Migrator().AddColumn(column.entity, column.name); err != nil {
-				return err
-			}
-		}
-		if !tx.Migrator().HasTable(&model.ChannelModel{}) || tx.Migrator().HasIndex(&model.ChannelModel{}, "ProtocolRelease") {
-			return nil
-		}
-		return tx.Migrator().CreateIndex(&model.ChannelModel{}, "ProtocolRelease")
-	}},
+	{version: 109, name: "model_protocol_releases", checksum: "sha256:model-protocol-releases-v109", apply: migrateModelProtocolReleases},
 	{version: 110, name: "cloud_agent_history_archives", checksum: "sha256:cloud-agent-history-archives-v110-20261123", apply: func(tx *gorm.DB) error {
 		if err := tx.AutoMigrate(&model.CloudAgentExecution{}, &model.CloudAgentHistoryArchive{}); err != nil {
 			return err
 		}
 		return reconcileAgentStorageUsage(tx)
 	}},
+	{version: 113, name: "drop_obsolete_inspirations", checksum: "sha256:drop-obsolete-inspirations-v113-20261126", apply: func(tx *gorm.DB) error { return nil }},
+	{version: 114, name: "preserve_inspirations_table", checksum: "sha256:preserve-inspirations-table-v114-20261126", apply: func(tx *gorm.DB) error {
+		return tx.AutoMigrate(&model.Inspiration{})
+	}},
+	{version: 115, name: "remove_obsolete_legacy_tables", checksum: "sha256:remove-obsolete-legacy-tables-v115-20261126", apply: removeObsoleteLegacyTables},
+}
+
+func removeObsoleteLegacyTables(tx *gorm.DB) error {
+	for _, table := range []string{
+		"schema_migrations_legacy",
+		"team_asset_shares",
+		"team_credit_requests",
+		"team_invites",
+		"team_join_requests",
+		"team_member_credit_quota",
+		"team_member_groups",
+		"team_members",
+		"team_project_folders",
+		"team_projects",
+		"user_memberships",
+	} {
+		if tx.Migrator().HasTable(table) {
+			if err := tx.Migrator().DropTable(table); err != nil {
+				return fmt.Errorf("移除无用旧表 %s：%w", table, err)
+			}
+		}
+	}
+	return nil
 }
 
 func migrateAPILogGenerationContent(tx *gorm.DB) error {
@@ -407,6 +419,24 @@ func migrateAPILogGenerationContent(tx *gorm.DB) error {
 		return nil
 	}
 	return tx.Migrator().AddColumn(&model.ApiCallLog{}, "GenerationContentJSON")
+}
+
+func migrateModelProtocolReleases(tx *gorm.DB) error {
+	for _, column := range []struct {
+		entity any
+		name   string
+	}{{&model.ChannelModel{}, "ProtocolRelease"}, {&model.Task{}, "ProtocolBindingJSON"}, {&model.RouteAttempt{}, "ProtocolBindingJSON"}} {
+		if !tx.Migrator().HasTable(column.entity) || tx.Migrator().HasColumn(column.entity, column.name) {
+			continue
+		}
+		if err := tx.Migrator().AddColumn(column.entity, column.name); err != nil {
+			return err
+		}
+	}
+	if !tx.Migrator().HasTable(&model.ChannelModel{}) || tx.Migrator().HasIndex(&model.ChannelModel{}, "ProtocolRelease") {
+		return nil
+	}
+	return tx.Migrator().CreateIndex(&model.ChannelModel{}, "ProtocolRelease")
 }
 
 // migrateReferenceVideoCostPrice 为价格档成本和账单成本快照增加带参考视频的成本价。
@@ -1030,27 +1060,55 @@ func migrateChannelPresentation(tx *gorm.DB) error {
 func migrationsForDatabase(db *gorm.DB) ([]migration, error) {
 	var applied schemaMigration
 	err := db.First(&applied, "version = ?", 6).Error
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return schemaMigrations, nil
-	}
-	if err != nil {
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, fmt.Errorf("读取数据库迁移 6：%w", err)
 	}
-	if applied.Name != "asset_library_folders" {
-		return schemaMigrations, nil
-	}
-	legacy := migration{version: 6, name: "asset_library_folders", checksum: assetLibraryFoldersChecksum, apply: migrateSchemaV7}
-	if err := validateMigrationRecord(applied, legacy); err != nil {
-		return nil, err
-	}
 	plan := append([]migration(nil), schemaMigrations...)
-	for index, item := range plan {
-		switch item.version {
-		case 6:
-			plan[index] = legacy
-		case 7:
-			plan[index] = migration{version: 7, name: "resource_playback_variant", checksum: resourcePlaybackChecksum, apply: migrateSchemaV6}
+	if err == nil && applied.Name == "asset_library_folders" {
+		legacy := migration{version: 6, name: "asset_library_folders", checksum: assetLibraryFoldersChecksum, apply: migrateSchemaV7}
+		if err := validateMigrationRecord(applied, legacy); err != nil {
+			return nil, err
 		}
+		for index, item := range plan {
+			switch item.version {
+			case 6:
+				plan[index] = legacy
+			case 7:
+				plan[index] = migration{version: 7, name: "resource_playback_variant", checksum: resourcePlaybackChecksum, apply: migrateSchemaV6}
+			}
+		}
+	}
+	// Some deployed builds used version 109 for credit-account identity before
+	// the current model-protocol migration occupied that slot. Preserve that
+	// historical ledger entry while validating the schema produced by the
+	// current protocol migration.
+	var legacyProtocol schemaMigration
+	err = db.First(&legacyProtocol, "version = ?", 109).Error
+	if err == nil {
+		if legacyProtocol.Name == "credit_account_identity" && legacyProtocol.Checksum == "sha256:credit-account-identity-v109-20261121" {
+			for _, column := range []struct {
+				entity any
+				name   string
+			}{{&model.ChannelModel{}, "ProtocolRelease"}, {&model.Task{}, "ProtocolBindingJSON"}, {&model.RouteAttempt{}, "ProtocolBindingJSON"}} {
+				if !db.Migrator().HasColumn(column.entity, column.name) {
+					return nil, fmt.Errorf("旧数据库迁移 109 已记录 credit_account_identity，但缺少当前协议字段 %s", column.name)
+				}
+			}
+			if !db.Migrator().HasIndex(&model.ChannelModel{}, "ProtocolRelease") {
+				return nil, fmt.Errorf("旧数据库迁移 109 已记录 credit_account_identity，但缺少当前协议索引")
+			}
+			if err := validateLegacyCreditAccountIdentity(db); err != nil {
+				return nil, err
+			}
+			for index, item := range plan {
+				if item.version == 109 {
+					plan[index] = migration{version: 109, name: legacyProtocol.Name, checksum: legacyProtocol.Checksum}
+					break
+				}
+			}
+		}
+	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, fmt.Errorf("读取数据库迁移 109：%w", err)
 	}
 	return plan, nil
 }
@@ -1252,6 +1310,46 @@ func normalizeLegacyWorkbenchMigration(tx *gorm.DB) error {
 	return nil
 }
 
+func normalizeLegacyModelProtocolMigration(tx *gorm.DB) error {
+	var applied schemaMigration
+	err := tx.First(&applied, "version = ?", 109).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil
+	}
+	if err != nil {
+		return fmt.Errorf("读取旧模型协议迁移记录：%w", err)
+	}
+	if applied.Name != "credit_account_identity" || applied.Checksum != "sha256:credit-account-identity-v109-20261121" {
+		return nil
+	}
+	if err := validateLegacyCreditAccountIdentity(tx); err != nil {
+		return err
+	}
+	return migrateModelProtocolReleases(tx)
+}
+
+func validateLegacyCreditAccountIdentity(db *gorm.DB) error {
+	if !db.Migrator().HasTable(&model.CreditAccount{}) || !db.Migrator().HasIndex(&model.CreditAccount{}, "idx_credit_account_personal_user") {
+		return fmt.Errorf("旧数据库迁移 109 已记录 credit_account_identity，但积分账户结构不完整")
+	}
+	columns, err := db.Migrator().ColumnTypes(&model.CreditAccount{})
+	if err != nil {
+		return fmt.Errorf("读取旧数据库积分账户结构：%w", err)
+	}
+	primaryID := false
+	for _, column := range columns {
+		if strings.EqualFold(column.Name(), "id") {
+			primary, ok := column.PrimaryKey()
+			primaryID = ok && primary
+			break
+		}
+	}
+	if !primaryID {
+		return fmt.Errorf("旧数据库迁移 109 已记录 credit_account_identity，但积分账户主键不是 id")
+	}
+	return nil
+}
+
 const workbenchToolsMigrationVersion int64 = 54
 
 func migrateSchemaV56(tx *gorm.DB) error {
@@ -1289,6 +1387,9 @@ func MigrateSchema(db *gorm.DB) error {
 			return err
 		}
 		if err := normalizeLegacyWorkbenchMigration(tx); err != nil {
+			return err
+		}
+		if err := normalizeLegacyModelProtocolMigration(tx); err != nil {
 			return err
 		}
 		plan, err := migrationsForDatabase(tx)

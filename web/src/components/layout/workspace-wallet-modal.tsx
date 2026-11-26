@@ -149,7 +149,9 @@ export function WorkspaceWalletModal({
         if (!open) return;
         setTab(initialTab === "redeem" ? "topup" : initialTab || "topup");
         setRedeemOpen(initialTab === "redeem");
-        setFocusKind(initialCategory && initialCategory !== "all" ? initialCategory : undefined);
+        const category = initialCategory && initialCategory !== "all" ? initialCategory : "credits";
+        setFocusKind(category);
+        setFocusToken((current) => current + 1);
         setPage(1);
         void reloadWallet(1, initialTab === "income" ? "income" : "expenses");
         setPaymentsLoading(true);
@@ -161,11 +163,8 @@ export function WorkspaceWalletModal({
                 setProducts(enabledProducts);
                 setPaymentOptions(options);
                 setUsdCnyRate(settingsResult.settings.usdCnyRate || "");
-                // 从容量入口进入时优先选中存储空间套餐。
-                const preferred = enabledProducts.filter((item) => !initialCategory || initialCategory === "all" || item.kind === initialCategory);
-                setSelectedProductId((current) =>
-                    current && enabledProducts.some((item) => item.id === current) && !initialCategory ? current : preferred.find((item) => item.canPurchase)?.id || enabledProducts.find((item) => item.canPurchase)?.id || "",
-                );
+                const preferred = enabledProducts.filter((item) => item.kind === category);
+                setSelectedProductId(preferred.find((item) => item.canPurchase)?.id || enabledProducts.find((item) => item.canPurchase)?.id || "");
                 setSelectedOptionKey((current) => (current && options.some((item) => item.key === current) ? current : options[0]?.key || ""));
             })
             .catch((error) => message.error(error instanceof Error ? error.message : t("account.wallet.configLoadFailed")))
@@ -272,7 +271,16 @@ export function WorkspaceWalletModal({
                             ) : null}
                         </div>
                         <nav className="wallet-topup-nav" role="tablist" aria-label={t("nav.tools.wallet")}>
-                            <button type="button" role="tab" aria-selected={tab === "topup"} onClick={() => setTab("topup")}>
+                            <button
+                                type="button"
+                                role="tab"
+                                aria-selected={tab === "topup"}
+                                onClick={() => {
+                                    setTab("topup");
+                                    setFocusKind("credits");
+                                    setFocusToken((current) => current + 1);
+                                }}
+                            >
                                 {t("account.wallet.tabTopup")}
                             </button>
                             <button type="button" role="tab" aria-selected={tab === "orders"} onClick={() => setTab("orders")}>

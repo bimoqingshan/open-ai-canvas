@@ -26,6 +26,44 @@ func TestCurrentSchemaVersionMatchesMigrationPlan(t *testing.T) {
 	}
 }
 
+func TestMigrationRemovesTablesOutsideCurrentSchema(t *testing.T) {
+	db, err := Open(Config{Driver: "sqlite", DSN: "file:migration-remove-obsolete-tables?mode=memory&cache=shared"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	legacyTables := []string{
+		"schema_migrations_legacy",
+		"team_asset_shares",
+		"team_credit_requests",
+		"team_invites",
+		"team_join_requests",
+		"team_member_credit_quota",
+		"team_member_groups",
+		"team_members",
+		"team_project_folders",
+		"team_projects",
+		"user_memberships",
+	}
+	for _, table := range legacyTables {
+		if err := db.Exec("CREATE TABLE " + table + " (id TEXT PRIMARY KEY)").Error; err != nil {
+			t.Fatalf("create legacy table %s: %v", table, err)
+		}
+	}
+	if err := MigrateSchema(db); err != nil {
+		t.Fatal(err)
+	}
+	for _, table := range legacyTables {
+		if db.Migrator().HasTable(table) {
+			t.Errorf("obsolete table %s remains", table)
+		}
+	}
+	for _, table := range []string{"inspirations", "linghua_community_works", "linghua_community_categories", "linghua_creator_challenges"} {
+		if !db.Migrator().HasTable(table) {
+			t.Errorf("current table %s was removed", table)
+		}
+	}
+}
+
 type channelModelProtocolV58 struct {
 	ID       string `gorm:"primaryKey;size:36"`
 	Protocol string `gorm:"size:32;index"`

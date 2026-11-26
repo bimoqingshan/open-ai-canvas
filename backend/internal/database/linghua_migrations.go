@@ -3,6 +3,7 @@ package database
 import (
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"gorm.io/gorm"
@@ -50,6 +51,10 @@ var linghuaSchemaMigrations = []migration{
 		item.CreatedAt = time.Now().UTC()
 		item.UpdatedAt = item.CreatedAt
 		return tx.Where("id = ?", item.ID).FirstOrCreate(&item).Error
+	}},
+	{version: 4, name: "linghua_sync_legacy_content", checksum: "sha256:linghua-sync-legacy-content-v4-20261126", apply: migrateLegacyLinghuaContent},
+	{version: 5, name: "linghua_challenge_poster_resource", checksum: "sha256:linghua-challenge-poster-resource-v5-20261126", apply: func(tx *gorm.DB) error {
+		return tx.AutoMigrate(&model.CreatorChallenge{})
 	}},
 }
 
@@ -153,6 +158,66 @@ func moveUnreleasedLinghuaMigration(tx *gorm.DB) error {
 		if err := tx.Delete(&schemaMigration{}, "version = ?", expected.version).Error; err != nil {
 			return fmt.Errorf("移除未发布的 Linghua 主迁移记录 %d：%w", expected.version, err)
 		}
+	}
+	return nil
+}
+
+func migrateLegacyLinghuaContent(tx *gorm.DB) error {
+	if err := copyLegacyLinghuaRows(tx, "community_categories", "linghua_community_categories", []string{"id", "name", "description", "sort_order", "enabled", "created_at", "updated_at"}); err != nil {
+		return err
+	}
+	if err := copyLegacyLinghuaRows(tx, "creator_challenges", "linghua_creator_challenges", []string{"id", "title", "description", "activity_tag", "tracks_json", "starts_at", "ends_at", "enabled", "created_at", "updated_at"}); err != nil {
+		return err
+	}
+	if err := copyLegacyLinghuaRows(tx, "community_works", "linghua_community_works", []string{"id", "user_id", "team_id", "canvas_project_id", "video_resource_id", "cover_resource_id", "title", "description", "creator_name", "social_url", "challenge_id", "challenge_title", "track_id", "track_title", "category_id", "category_title", "position", "public_canvas", "status", "review_note", "reviewed_by", "reviewed_at", "created_at", "updated_at"}); err != nil {
+		return err
+	}
+	if err := copyLegacyLinghuaRows(tx, "home_carousel_settings", "linghua_home_carousel_settings", []string{"id", "config_json", "updated_by", "updated_at"}); err != nil {
+		return err
+	}
+	if err := copyLegacyLinghuaRows(tx, "learning_square_settings", "linghua_learning_square_settings", []string{"id", "config_json", "updated_by", "updated_at"}); err != nil {
+		return err
+	}
+	if err := copyLegacyLinghuaRows(tx, "navigation_menu_items", "linghua_navigation_menu_items", []string{"id", "title", "path", "group_title", "group_order", "sort_order", "icon", "enabled", "built_in", "contact_cards", "created_at", "updated_at"}); err != nil {
+		return err
+	}
+	return nil
+}
+
+func copyLegacyLinghuaRows(tx *gorm.DB, oldTable, newTable string, columns []string) error {
+	if !tx.Migrator().HasTable(oldTable) {
+		return nil
+	}
+	if !tx.Migrator().HasTable(newTable) {
+		return fmt.Errorf("Linghua 迁移目标表不存在：%s", newTable)
+	}
+	quotedColumns := make([]string, len(columns))
+	for index, column := range columns {
+		quotedColumns[index] = tx.Statement.Quote(column)
+	}
+	columnList := strings.Join(quotedColumns, ", ")
+	if err := tx.Exec(fmt.Sprintf("INSERT INTO %s (%s) SELECT %s FROM %s WHERE true ON CONFLICT (%s) DO NOTHING", tx.Statement.Quote(newTable), columnList, columnList, tx.Statement.Quote(oldTable), tx.Statement.Quote("id"))).Error; err != nil {
+		return fmt.Errorf("同步旧 Linghua 表 %s：%w", oldTable, err)
+	}
+	var oldCount, newCount int64
+	if err := tx.Table(oldTable).Count(&oldCount).Error; err != nil {
+		return fmt.Errorf("统计旧 Linghua 表 %s：%w", oldTable, err)
+	}
+	if err := tx.Table(newTable).Count(&newCount).Error; err != nil {
+		return fmt.Errorf("统计 Linghua 表 %s：%w", newTable, err)
+	}
+	if newCount < oldCount {
+		return fmt.Errorf("Linghua 表 %s 同步不完整：旧表 %d 条，新表 %d 条", oldTable, oldCount, newCount)
+	}
+	var missingCount int64
+	if err := tx.Table(oldTable).Joins("LEFT JOIN " + tx.Statement.Quote(newTable) + " ON " + tx.Statement.Quote(newTable) + ".id = " + tx.Statement.Quote(oldTable) + ".id").Where(tx.Statement.Quote(newTable) + ".id IS NULL").Count(&missingCount).Error; err != nil {
+		return fmt.Errorf("核对旧 Linghua 表 %s：%w", oldTable, err)
+	}
+	if missingCount > 0 {
+		return fmt.Errorf("Linghua 表 %s 仍有 %d 条记录未同步", oldTable, missingCount)
+	}
+	if err := tx.Migrator().DropTable(oldTable); err != nil {
+		return fmt.Errorf("移除已同步的旧 Linghua 表 %s：%w", oldTable, err)
 	}
 	return nil
 }

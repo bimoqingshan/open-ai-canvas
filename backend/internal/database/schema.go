@@ -146,6 +146,7 @@ func Models() []any {
 		&model.WorkbenchPreset{},
 		&model.PoseLibrarySource{},
 		&model.PoseLibraryItem{},
+		&model.Inspiration{},
 		&model.InspirationFeedEntry{},
 		&model.CanvasShare{},
 		&model.PromptTemplate{},

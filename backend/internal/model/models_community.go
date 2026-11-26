@@ -52,16 +52,17 @@ type CommunityCategory struct {
 func (CommunityCategory) TableName() string { return "linghua_community_categories" }
 
 type CreatorChallenge struct {
-	ID          string     `json:"id" gorm:"primaryKey;size:36"`
-	Title       string     `json:"title" gorm:"size:160"`
-	Description string     `json:"description" gorm:"type:text"`
-	ActivityTag string     `json:"activityTag" gorm:"size:120"`
-	TracksJSON  string     `json:"-" gorm:"type:text"`
-	StartsAt    *time.Time `json:"startsAt,omitempty"`
-	EndsAt      *time.Time `json:"endsAt,omitempty"`
-	Enabled     bool       `json:"enabled" gorm:"index;not null;default:false"`
-	CreatedAt   time.Time  `json:"createdAt"`
-	UpdatedAt   time.Time  `json:"updatedAt"`
+	ID               string     `json:"id" gorm:"primaryKey;size:36"`
+	Title            string     `json:"title" gorm:"size:160"`
+	Description      string     `json:"description" gorm:"type:text"`
+	PosterResourceID string     `json:"-" gorm:"size:36"`
+	ActivityTag      string     `json:"activityTag" gorm:"size:120"`
+	TracksJSON       string     `json:"-" gorm:"type:text"`
+	StartsAt         *time.Time `json:"startsAt,omitempty"`
+	EndsAt           *time.Time `json:"endsAt,omitempty"`
+	Enabled          bool       `json:"enabled" gorm:"index;not null;default:false"`
+	CreatedAt        time.Time  `json:"createdAt"`
+	UpdatedAt        time.Time  `json:"updatedAt"`
 }
 
 func (CreatorChallenge) TableName() string { return "linghua_creator_challenges" }

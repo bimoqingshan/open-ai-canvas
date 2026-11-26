@@ -10,6 +10,31 @@ import (
 	"gorm.io/gorm"
 )
 
+func TestMigrateSchemaPreservesInspirationsTable(t *testing.T) {
+	db, err := Open(Config{Driver: "sqlite", DSN: "file:" + t.Name() + "?mode=memory&cache=shared"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	sqlDB, err := db.DB()
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = sqlDB.Close() })
+	if err := db.Exec("CREATE TABLE inspirations (id TEXT PRIMARY KEY, title TEXT)").Error; err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Exec("INSERT INTO inspirations (id, title) VALUES (?, ?)", "preserve-me", "保留内容").Error; err != nil {
+		t.Fatal(err)
+	}
+	if err := MigrateSchema(db); err != nil {
+		t.Fatal(err)
+	}
+	var preserved model.Inspiration
+	if err := db.First(&preserved, "id = ?", "preserve-me").Error; err != nil || preserved.Title != "保留内容" {
+		t.Fatalf("legacy inspiration was not preserved: %#v %v", preserved, err)
+	}
+}
+
 func legacyFolderMigrationDatabase(t *testing.T) *gorm.DB {
 	t.Helper()
 	db, err := Open(Config{Driver: "sqlite", DSN: "file:" + t.Name() + "?mode=memory&cache=shared"})
@@ -115,5 +140,56 @@ func TestMigrateSchemaRejectsUnknownLegacyLineage(t *testing.T) {
 				t.Fatal("rejected migration changed resource schema")
 			}
 		})
+	}
+}
+
+func TestMigrateSchemaPreservesCreditAccountIdentityLineage(t *testing.T) {
+	db, err := Open(Config{Driver: "sqlite", DSN: "file:" + t.Name() + "?mode=memory&cache=shared"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	sqlDB, err := db.DB()
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = sqlDB.Close() })
+	if err := MigrateSchema(db); err != nil {
+		t.Fatal(err)
+	}
+	legacy := schemaMigration{Version: 109, Name: "credit_account_identity", Checksum: "sha256:credit-account-identity-v109-20261121", AppliedAt: time.Date(2026, 11, 21, 0, 0, 0, 0, time.UTC)}
+	if err := db.Model(&schemaMigration{}).Where("version = ?", legacy.Version).Updates(map[string]any{"name": legacy.Name, "checksum": legacy.Checksum, "applied_at": legacy.AppliedAt}).Error; err != nil {
+		t.Fatal(err)
+	}
+	account := model.CreditAccount{UserID: "legacy-user", AvailableMicrocredits: 1234, ReservedMicrocredits: 56}
+	if err := db.Create(&account).Error; err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Model(&model.CreditAccount{}).Where("id = ?", account.ID).Update("id", "legacy-random-account").Error; err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Migrator().DropIndex(&model.ChannelModel{}, "ProtocolRelease"); err != nil {
+		t.Fatal(err)
+	}
+	for attempt := 0; attempt < 2; attempt++ {
+		if err := MigrateSchema(db); err != nil {
+			t.Fatal(err)
+		}
+	}
+	var after schemaMigration
+	if err := db.First(&after, "version = ?", legacy.Version).Error; err != nil {
+		t.Fatal(err)
+	}
+	if after.Name != legacy.Name || after.Checksum != legacy.Checksum || !after.AppliedAt.Equal(legacy.AppliedAt) {
+		t.Fatalf("legacy ledger entry changed: %+v", after)
+	}
+	if !db.Migrator().HasIndex(&model.ChannelModel{}, "ProtocolRelease") {
+		t.Fatal("current protocol-release index was not restored")
+	}
+	var preserved model.CreditAccount
+	if err := db.First(&preserved, "user_id = ?", "legacy-user").Error; err != nil {
+		t.Fatal(err)
+	}
+	if preserved.ID != "legacy-random-account" || preserved.AvailableMicrocredits != 1234 || preserved.ReservedMicrocredits != 56 {
+		t.Fatalf("legacy credit account changed: %+v", preserved)
 	}
 }

@@ -40,7 +40,7 @@ func TestMigrateSchemaKeepsLinghuaTablesInSeparateLedger(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !status.Ready || status.Current != CurrentSchemaVersion || status.LinghuaCurrent != 3 || status.LinghuaExpected != 3 {
+	if !status.Ready || status.Current != CurrentSchemaVersion || status.LinghuaCurrent != 5 || status.LinghuaExpected != 5 {
 		t.Fatalf("unexpected schema status: %#v", status)
 	}
 	for _, table := range []string{
@@ -61,6 +61,48 @@ func TestMigrateSchemaKeepsLinghuaTablesInSeparateLedger(t *testing.T) {
 	}
 	if err := MigrateSchema(db); err != nil {
 		t.Fatalf("Linghua migration is not idempotent: %v", err)
+	}
+}
+
+func TestLinghuaMigrationSynchronizesLegacyTablesWithoutLegacyLedger(t *testing.T) {
+	db, err := Open(Config{Driver: "sqlite", DSN: fmt.Sprintf("file:linghua-sync-%p?mode=memory&cache=shared", t)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := db.AutoMigrate(&schemaMigration{}, &legacyCommunityWork{}, &legacyCommunityCategory{}, &legacyCreatorChallenge{}); err != nil {
+		t.Fatal(err)
+	}
+	legacyWork := legacyCommunityWork(model.CommunityWork{ID: "legacy-work", Title: "旧作品"})
+	if err := db.Create(&legacyWork).Error; err != nil {
+		t.Fatal(err)
+	}
+	legacyCategory := legacyCommunityCategory(model.CommunityCategory{ID: "legacy-category", Name: "旧分类"})
+	if err := db.Create(&legacyCategory).Error; err != nil {
+		t.Fatal(err)
+	}
+	legacyChallenge := legacyCreatorChallenge(model.CreatorChallenge{ID: "legacy-challenge", Title: "旧赛事"})
+	if err := db.Create(&legacyChallenge).Error; err != nil {
+		t.Fatal(err)
+	}
+	if err := MigrateLinghuaSchema(db); err != nil {
+		t.Fatal(err)
+	}
+	var work model.CommunityWork
+	if err := db.First(&work, "id = ?", "legacy-work").Error; err != nil || work.Title != "旧作品" {
+		t.Fatalf("legacy work was not synchronized: %#v %v", work, err)
+	}
+	var category model.CommunityCategory
+	if err := db.First(&category, "id = ?", "legacy-category").Error; err != nil || category.Name != "旧分类" {
+		t.Fatalf("legacy category was not synchronized: %#v %v", category, err)
+	}
+	var challenge model.CreatorChallenge
+	if err := db.First(&challenge, "id = ?", "legacy-challenge").Error; err != nil || challenge.Title != "旧赛事" {
+		t.Fatalf("legacy challenge was not synchronized: %#v %v", challenge, err)
+	}
+	for _, table := range []string{"community_works", "community_categories", "creator_challenges"} {
+		if db.Migrator().HasTable(table) {
+			t.Errorf("legacy table %s remains after synchronization", table)
+		}
 	}
 }
 

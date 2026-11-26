@@ -1,8 +1,8 @@
-import { useState, type Key } from "react";
+import { useRef, useState, type Key } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { App, Button, Input, Modal, Select, Switch, Tag } from "antd";
 import type { TableProps } from "antd";
-import { ArrowDown, ArrowUp, Check, Pencil, Plus, X } from "lucide-react";
+import { ArrowDown, ArrowUp, Check, ImagePlus, Pencil, Plus, X } from "lucide-react";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 
 import {
@@ -21,6 +21,7 @@ import {
     type CreatorChallenge,
     type CreatorChallengeInput,
 } from "@/services/api/community";
+import { uploadResourceFile } from "@/services/api/resources";
 import { AdminPageFrame } from "@/pages/admin/components/admin-shell";
 import { AdminDataTable, AdminTableEmpty, PaginationBar } from "@/pages/admin/components/admin-ui";
 import "./community-admin-pages.css";
@@ -422,6 +423,8 @@ export function AdminCreatorChallengesPage() {
     const [editing, setEditing] = useState<CreatorChallengeInput | null>(null);
     const [keyword, setKeyword] = useState("");
     const [saving, setSaving] = useState(false);
+    const [imageUploading, setImageUploading] = useState(false);
+    const imageInputRef = useRef<HTMLInputElement>(null);
 
     const openChallenge = (challenge?: CreatorChallenge) => {
         setEditing(
@@ -442,8 +445,31 @@ export function AdminCreatorChallengesPage() {
 
     const patchTrack = (index: number, patch: Partial<CommunityChallengeTrack>) => setEditing((current) => (current ? { ...current, tracks: current.tracks.map((track, itemIndex) => (itemIndex === index ? { ...track, ...patch } : track)) } : current));
 
+    const uploadChallengeImage = async (file?: File) => {
+        if (!file || !editing) return;
+        if (!file.type.startsWith("image/")) {
+            message.warning("请选择图片文件");
+            return;
+        }
+        setImageUploading(true);
+        try {
+            const resource = await uploadResourceFile(file, "image", { fileName: file.name });
+            setEditing((current) => {
+                if (!current) return current;
+                const marker = `![活动主视觉](resource:${resource.id})`;
+                const description = /!\[活动主视觉\]\([^)]*\)/.test(current.description) ? current.description.replace(/!\[活动主视觉\]\([^)]*\)/, marker) : `${current.description.trimEnd()}${current.description.trim() ? "\n\n" : ""}${marker}`;
+                return { ...current, description };
+            });
+            message.success("图片已上传并插入活动详情");
+        } catch (error) {
+            message.error(error instanceof Error ? error.message : "活动图片上传失败");
+        } finally {
+            setImageUploading(false);
+        }
+    };
+
     const save = async () => {
-        if (!editing) return;
+        if (!editing || imageUploading) return;
         setSaving(true);
         try {
             const payload = { ...editing, startsAt: utcDateTime(localDateTime(editing.startsAt)) || undefined, endsAt: utcDateTime(localDateTime(editing.endsAt)) || undefined, tracks: editing.tracks.filter((track) => track.name.trim()) };
@@ -522,6 +548,7 @@ export function AdminCreatorChallengesPage() {
                 onCancel={() => setEditing(null)}
                 onOk={() => void save()}
                 confirmLoading={saving}
+                okButtonProps={{ disabled: imageUploading }}
                 okText="保存活动"
                 cancelText="取消"
                 destroyOnHidden
@@ -537,7 +564,22 @@ export function AdminCreatorChallengesPage() {
                             <Input maxLength={120} value={editing.activityTag} onChange={(event) => setEditing({ ...editing, activityTag: event.target.value })} placeholder="发布弹窗中的活动选项名称" />
                         </label>
                         <label className="admin-community-challenge-description">
-                            <span>活动详情（Markdown）</span>
+                            <span className="admin-community-challenge-description-heading">
+                                活动详情（Markdown）
+                                <Button size="small" icon={<ImagePlus className="size-3.5" />} loading={imageUploading} onClick={() => imageInputRef.current?.click()}>
+                                    上传图片
+                                </Button>
+                                <input
+                                    ref={imageInputRef}
+                                    type="file"
+                                    accept="image/*"
+                                    hidden
+                                    onChange={(event) => {
+                                        void uploadChallengeImage(event.target.files?.[0]);
+                                        event.target.value = "";
+                                    }}
+                                />
+                            </span>
                             <Input.TextArea
                                 rows={8}
                                 maxLength={2000}
@@ -546,7 +588,7 @@ export function AdminCreatorChallengesPage() {
                                 onChange={(event) => setEditing({ ...editing, description: event.target.value })}
                                 placeholder="可使用标题、列表、表格、链接和图片；HTML 不会执行。"
                             />
-                            <small>用 ![活动主视觉](/站点资源路径) 设置列表封面；规则与客服二维码会显示在详情页。</small>
+                            <small>上传的图片会插入 Markdown，并用于活动列表封面；规则与客服二维码会显示在详情页。</small>
                         </label>
                         <div className="admin-community-date-row">
                             <label>

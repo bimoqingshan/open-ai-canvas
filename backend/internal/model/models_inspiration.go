@@ -22,3 +22,32 @@ type InspirationFeedEntry struct {
 	CreatedAt   time.Time  `json:"createdAt"`
 	UpdatedAt   time.Time  `json:"updatedAt"`
 }
+
+// Inspiration is the legacy inspiration library table. It remains part of the
+// deployed schema so older content is retained even though the live feed uses
+// InspirationFeedEntry.
+type Inspiration struct {
+	ID          string     `json:"id" gorm:"primaryKey;size:36"`
+	UserID      string     `json:"userId" gorm:"index;size:36"`
+	Title       string     `json:"title" gorm:"size:160"`
+	Description string     `json:"description" gorm:"type:text"`
+	Image       string     `json:"image" gorm:"size:2000"`
+	Mode        string     `json:"mode" gorm:"index;size:16"`
+	Prompt      string     `json:"prompt" gorm:"type:text"`
+	PromptZH    string     `json:"promptZh" gorm:"column:prompt_zh;type:text"`
+	Category    string     `json:"category" gorm:"index;size:120"`
+	TagsJSON    string     `json:"-" gorm:"column:tags_json;type:text"`
+	Ratio       string     `json:"ratio" gorm:"size:32"`
+	SourceID    string     `json:"sourceId" gorm:"index;size:64"`
+	Credit      string     `json:"credit" gorm:"size:160"`
+	SourceURL   string     `json:"sourceUrl" gorm:"size:2000"`
+	Visibility  string     `json:"visibility" gorm:"index;size:16;not null;default:private"`
+	Status      string     `json:"status" gorm:"index;size:24;not null;default:approved"`
+	ReviewNote  string     `json:"reviewNote" gorm:"type:text"`
+	ReviewedBy  string     `json:"reviewedBy" gorm:"size:36"`
+	ReviewedAt  *time.Time `json:"reviewedAt,omitempty"`
+	CreatedAt   time.Time  `json:"createdAt" gorm:"index"`
+	UpdatedAt   time.Time  `json:"updatedAt"`
+}
+
+func (Inspiration) TableName() string { return "inspirations" }

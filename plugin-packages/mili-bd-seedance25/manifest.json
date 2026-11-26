@@ -1,0 +1,614 @@
+{
+  "apiVersion": "yingce.plugin/v2",
+  "id": "mili-bd-seedance25",
+  "name": "米粒 BD Seedance2.5",
+  "version": "2.0.0",
+  "author": "影策",
+  "description": "米粒 bd-seedance2.5 视频生成插件，支持文字和多模态参考素材。",
+  "permissions": [
+    "generation.run",
+    "media.read"
+  ],
+  "configuration": {
+    "fields": [
+      {
+        "name": "apiKey",
+        "type": "secret",
+        "label": "API Key",
+        "required": true
+      }
+    ]
+  },
+  "contributes": {
+    "providers": [
+      {
+        "id": "mili-bd-seedance25",
+        "label": "米粒 BD Seedance2.5",
+        "capabilities": [
+          "video"
+        ],
+        "scopes": [
+          "admin.system-channel",
+          "user.custom-channel",
+          "canvas",
+          "creation",
+          "agent"
+        ],
+        "baseUrl": "https://miliapi.com",
+        "idempotentCreate": true,
+        "auth": {
+          "type": "bearer",
+          "field": "apiKey"
+        },
+        "parameters": [
+          {
+            "name": "model",
+            "type": "string",
+            "required": false,
+            "mapping": "model",
+            "description": "可选模型名；按填写值原样发送给上游，不限制可用名称；未填写时默认 bd-seedance2.5。"
+          },
+          {
+            "name": "prompt",
+            "type": "string",
+            "required": true,
+            "mapping": "prompt",
+            "description": "1-45000 字符的视频描述，可用 @图片1、@视频1、@音频1 引用同类素材。"
+          },
+          {
+            "name": "duration",
+            "type": "integer",
+            "mapping": "seconds",
+            "description": "输出秒数；纯文字或不超过 9 张图片时 4-30 秒，含音视频或超过 9 张图片时 5-30 秒。"
+          },
+          {
+            "name": "aspectRatio",
+            "type": "string",
+            "mapping": "ratio",
+            "values": [
+              "auto",
+              "16:9",
+              "9:16",
+              "1:1",
+              "4:3",
+              "3:4",
+              "21:9"
+            ],
+            "description": "画幅比例，默认 auto。"
+          },
+          {
+            "name": "resolution",
+            "type": "string",
+            "mapping": "resolution",
+            "values": [
+              "720p"
+            ],
+            "description": "固定为 720p。"
+          },
+          {
+            "name": "images",
+            "type": "media[]",
+            "mapping": "images",
+            "description": "最多 30 张图片参考素材。"
+          },
+          {
+            "name": "videos",
+            "type": "media[]",
+            "mapping": "videos",
+            "description": "最多 10 段视频参考素材。"
+          },
+          {
+            "name": "audios",
+            "type": "media[]",
+            "mapping": "audios",
+            "description": "最多 10 段音频参考素材。"
+          }
+        ],
+        "validations": [
+          {
+            "assert": {
+              "$and": [
+                {
+                  "$gt": [
+                    {
+                      "$len": {
+                        "$trim": {
+                          "$ref": "request.prompt"
+                        }
+                      }
+                    },
+                    0
+                  ]
+                },
+                {
+                  "$lte": [
+                    {
+                      "$len": {
+                        "$ref": "request.prompt"
+                      }
+                    },
+                    45000
+                  ]
+                }
+              ]
+            },
+            "message": "米粒提示词应为 1-45000 个字符"
+          },
+          {
+            "assert": {
+              "$or": [
+                {
+                  "$eq": [
+                    {
+                      "$ref": "request.duration"
+                    },
+                    0
+                  ]
+                },
+                {
+                  "$and": [
+                    {
+                      "$gte": [
+                        {
+                          "$ref": "request.duration"
+                        },
+                        4
+                      ]
+                    },
+                    {
+                      "$lte": [
+                        {
+                          "$ref": "request.duration"
+                        },
+                        30
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            "message": "米粒纯文字或少量图片时长应为 4-30 秒"
+          },
+          {
+            "assert": {
+              "$or": [
+                {
+                  "$and": [
+                    {
+                      "$eq": [
+                        {
+                          "$len": {
+                            "$ref": "request.videos"
+                          }
+                        },
+                        0
+                      ]
+                    },
+                    {
+                      "$eq": [
+                        {
+                          "$len": {
+                            "$ref": "request.audios"
+                          }
+                        },
+                        0
+                      ]
+                    },
+                    {
+                      "$lte": [
+                        {
+                          "$len": {
+                            "$ref": "request.images"
+                          }
+                        },
+                        9
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "$or": [
+                    {
+                      "$eq": [
+                        {
+                          "$ref": "request.duration"
+                        },
+                        0
+                      ]
+                    },
+                    {
+                      "$and": [
+                        {
+                          "$gte": [
+                            {
+                              "$ref": "request.duration"
+                            },
+                            5
+                          ]
+                        },
+                        {
+                          "$lte": [
+                            {
+                              "$ref": "request.duration"
+                            },
+                            30
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            "message": "含音视频或超过 9 张图片时，米粒时长应为 5-30 秒"
+          },
+          {
+            "assert": {
+              "$lte": [
+                {
+                  "$len": {
+                    "$ref": "request.images"
+                  }
+                },
+                30
+              ]
+            },
+            "message": "米粒最多接收 30 张图片"
+          },
+          {
+            "assert": {
+              "$lte": [
+                {
+                  "$len": {
+                    "$ref": "request.videos"
+                  }
+                },
+                10
+              ]
+            },
+            "message": "米粒最多接收 10 段视频"
+          },
+          {
+            "assert": {
+              "$lte": [
+                {
+                  "$len": {
+                    "$ref": "request.audios"
+                  }
+                },
+                10
+              ]
+            },
+            "message": "米粒最多接收 10 段音频"
+          },
+          {
+            "assert": {
+              "$lte": [
+                {
+                  "$add": [
+                    {
+                      "$len": {
+                        "$ref": "request.images"
+                      }
+                    },
+                    {
+                      "$len": {
+                        "$ref": "request.videos"
+                      }
+                    },
+                    {
+                      "$len": {
+                        "$ref": "request.audios"
+                      }
+                    }
+                  ]
+                },
+                30
+              ]
+            },
+            "message": "米粒混合参考素材总数不能超过 30 个"
+          },
+          {
+            "assert": {
+              "$in": [
+                {
+                  "$lower": {
+                    "$trim": {
+                      "$coalesce": [
+                        {
+                          "$ref": "request.resolution"
+                        },
+                        "720p"
+                      ]
+                    }
+                  }
+                },
+                [
+                  "720p"
+                ]
+              ]
+            },
+            "message": "米粒仅支持 720p"
+          },
+          {
+            "assert": {
+              "$in": [
+                {
+                  "$lower": {
+                    "$trim": {
+                      "$coalesce": [
+                        {
+                          "$ref": "request.aspectRatio"
+                        },
+                        "auto"
+                      ]
+                    }
+                  }
+                },
+                [
+                  "auto",
+                  "16:9",
+                  "9:16",
+                  "1:1",
+                  "4:3",
+                  "3:4",
+                  "21:9"
+                ]
+              ]
+            },
+            "message": "米粒画幅仅支持 auto、16:9、9:16、1:1、4:3、3:4 或 21:9"
+          }
+        ],
+        "create": {
+          "method": "POST",
+          "path": "/v1/videos",
+          "contentType": "application/json",
+          "headers": {
+            "Idempotency-Key": {
+              "$ref": "request.extra.idempotencyKey"
+            }
+          },
+          "body": {
+            "model": {
+              "$coalesce": [
+                {
+                  "$ref": "request.model"
+                },
+                "bd-seedance2.5"
+              ]
+            },
+            "prompt": {
+              "$ref": "request.prompt"
+            },
+            "seconds": {
+              "$if": {
+                "condition": {
+                  "$eq": [
+                    {
+                      "$ref": "request.duration"
+                    },
+                    0
+                  ]
+                },
+                "then": 30,
+                "else": {
+                  "$ref": "request.duration"
+                }
+              }
+            },
+            "ratio": {
+              "$coalesce": [
+                {
+                  "$lower": {
+                    "$trim": {
+                      "$ref": "request.aspectRatio"
+                    }
+                  }
+                },
+                "auto"
+              ]
+            },
+            "resolution": "720p",
+            "images": {
+              "$omitEmpty": {
+                "$map": {
+                  "from": {
+                    "$ref": "request.images"
+                  },
+                  "as": "media",
+                  "in": {
+                    "$omitEmpty": {
+                      "name": {
+                        "$omitEmpty": {
+                          "$ref": "media.name"
+                        }
+                      },
+                      "url": {
+                        "$omitEmpty": {
+                          "$ref": "media.url"
+                        }
+                      },
+                      "data": {
+                        "$omitEmpty": {
+                          "$dataPayload": {
+                            "$ref": "media.dataUrl"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "videos": {
+              "$omitEmpty": {
+                "$map": {
+                  "from": {
+                    "$ref": "request.videos"
+                  },
+                  "as": "media",
+                  "in": {
+                    "$omitEmpty": {
+                      "name": {
+                        "$omitEmpty": {
+                          "$ref": "media.name"
+                        }
+                      },
+                      "url": {
+                        "$omitEmpty": {
+                          "$ref": "media.url"
+                        }
+                      },
+                      "data": {
+                        "$omitEmpty": {
+                          "$dataPayload": {
+                            "$ref": "media.dataUrl"
+                          }
+                        }
+                      },
+                      "seconds": {
+                        "$omitEmpty": {
+                          "$toFloat": {
+                            "$coalesce": [
+                              {
+                                "$ref": "media.metadata.seconds"
+                              },
+                              {
+                                "$divide": [
+                                  {
+                                    "$ref": "media.metadata.durationMs"
+                                  },
+                                  1000
+                                ]
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "audios": {
+              "$omitEmpty": {
+                "$map": {
+                  "from": {
+                    "$ref": "request.audios"
+                  },
+                  "as": "media",
+                  "in": {
+                    "$omitEmpty": {
+                      "name": {
+                        "$omitEmpty": {
+                          "$ref": "media.name"
+                        }
+                      },
+                      "url": {
+                        "$omitEmpty": {
+                          "$ref": "media.url"
+                        }
+                      },
+                      "data": {
+                        "$omitEmpty": {
+                          "$dataPayload": {
+                            "$ref": "media.dataUrl"
+                          }
+                        }
+                      },
+                      "seconds": {
+                        "$omitEmpty": {
+                          "$toFloat": {
+                            "$coalesce": [
+                              {
+                                "$ref": "media.metadata.seconds"
+                              },
+                              {
+                                "$divide": [
+                                  {
+                                    "$ref": "media.metadata.durationMs"
+                                  },
+                                  1000
+                                ]
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "poll": {
+          "method": "GET",
+          "path": "/v1/videos/{{taskId}}"
+        },
+        "result": {
+          "method": "GET",
+          "path": "/v1/videos/{{taskId}}/content",
+          "query": {
+            "download": [
+              "1"
+            ]
+          },
+          "headers": {
+            "Accept": "video/mp4"
+          }
+        },
+        "response": {
+          "taskId": {
+            "$coalesce": [
+              {
+                "$ref": "response.id"
+              },
+              {
+                "$ref": "response.task_id"
+              },
+              {
+                "$ref": "response.taskId"
+              },
+              {
+                "$ref": "taskId"
+              }
+            ]
+          },
+          "status": {
+            "$ref": "response.status"
+          },
+          "message": {
+            "$coalesce": [
+              {
+                "$ref": "response.error.message"
+              },
+              {
+                "$ref": "response.message"
+              },
+              {
+                "$ref": "response.error.reason"
+              }
+            ]
+          },
+          "resultUrlPaths": [
+            "url",
+            "video_url",
+            "data.url",
+            "data.video_url"
+          ],
+          "resultKind": "video",
+          "resultEphemeral": true,
+          "usage": {
+            "$ref": "response.usage"
+          },
+          "errorPaths": [
+            "error.message",
+            "error.reason"
+          ]
+        }
+      }
+    ]
+  },
+  "documentation": "# 米粒 BD Seedance2.5\n\n米粒 `bd-seedance2.5` 视频生成协议插件，支持文字、图片、视频和音频参考素材，以及异步轮询和 MP4 下载。\n\n- Provider：`mili-bd-seedance25`\n- 创建：`POST https://miliapi.com/v1/videos`\n- 查询：`GET https://miliapi.com/v1/videos/{id}`\n- 下载：`GET https://miliapi.com/v1/videos/{id}/content?download=1`\n- 鉴权：米粒 API Key（Bearer）\n\n插件使用宿主的任务持久化、幂等重试、轮询和媒体保存能力。完整字段、素材限制和已知运行时边界见 [`docs/interface.md`](docs/interface.md)。\n\n---\n\n# 米粒 BD Seedance2.5 接口\n\n## 配置\n\n- 插件 ID / Provider ID：`mili-bd-seedance25`。\n- 能力：`video`；认证配置字段：`apiKey`。\n- 服务地址固定为 `https://miliapi.com`，请求路径包含 `/v1`。\n- 请求使用 `Authorization: Bearer <API_KEY>`。密钥由宿主注入，不进入插件包、URL、请求 JSON 或日志。\n- 请求使用宿主为每笔创建任务生成的 `Idempotency-Key`。声明式运行时会在有限的网络、429 和临时 5xx 情况下复用同一键重试。\n\n## 创建\n\n`POST /v1/videos`，`Content-Type: application/json`。\n\n```json\n{\n  \"model\": \"bd-seedance2.5\",\n  \"prompt\": \"镜头缓缓推进，晨光照在湖边的木船上。\",\n  \"seconds\": 5,\n  \"ratio\": \"16:9\",\n  \"resolution\": \"720p\",\n  \"images\": [{\"name\": \"reference.png\", \"url\": \"https://example.com/reference.png\"}],\n  \"videos\": [{\"name\": \"source.mp4\", \"url\": \"https://example.com/source.mp4\"}],\n  \"audios\": [{\"name\": \"music.mp3\", \"url\": \"https://example.com/music.mp3\"}]\n}\n```\n\n统一请求参数映射如下：\n\n| 统一参数 | 米粒字段 | 规则 |\n| --- | --- | --- |\n| `model` | `model` | 可选，不限制模型名称并原样传给上游；未指定时默认为 `bd-seedance2.5`。上游是否支持该名称由米粒接口决定。 |\n| `prompt` | `prompt` | 必填，1-45000 个字符；可用 `@图片1`、`@视频1`、`@音频1` 引用同类素材。 |\n| `duration` | `seconds` | 未指定时为 30；纯文字或不超过 9 张图片时 4-30 秒，含音视频或超过 9 张图片时 5-30 秒。 |\n| `aspectRatio` | `ratio` | `auto`、`16:9`、`9:16`、`1:1`、`4:3`、`3:4`、`21:9`；默认 `auto`。 |\n| `resolution` | `resolution` | 仅支持 `720p`，未指定时使用 `720p`。 |\n| `images` | `images` | 最多 30 项。每项可为 `url` 或 Base64 `data`，也可带 `name`。 |\n| `videos` | `videos` | 最多 10 项；总素材最多 30 项。 |\n| `audios` | `audios` | 最多 10 项；总素材最多 30 项。 |\n\nBase64 会从宿主的 data URL 中提取正文后写入 `data`。无扩展名 URL 或 Base64 应提供真实后缀的 `name`，例如 `reference.png`。米粒支持公开 HTTP(S) 直链和 Base64；不要把内部素材 ID 当作 URL。\n\n若素材的 `metadata.seconds` 已存在，插件会映射到 `videos[].seconds` / `audios[].seconds`；否则尝试将 `metadata.durationMs` 除以 1000。两者均缺失时省略该字段，不推测素材时长。米粒仍会校验音视频格式和时长。\n\n## 轮询和下载\n\n- 创建响应保存 `id`、`task_id` 或 `taskId`。\n- 查询：`GET /v1/videos/{id}`。\n- `queued`、`in_progress` 继续轮询；`completed` 进入结果下载；`failed` 停止并展示 `error.message`。\n- 结果：`GET /v1/videos/{id}/content?download=1`，携带 `Accept: video/mp4`。宿主负责跟随安全的 HTTPS 跳转并保存 MP4。\n- 查询响应中的 `url`、`video_url` 或常见 `data.url` 仅作为临时结果引用，标记为 ephemeral；下载完成后不把签名地址作为永久资源地址。\n\n## 幂等和恢复边界\n\n米粒文档要求创建连接中断后使用原 `Idempotency-Key` 查询 `GET /v1/video-receipts`，再决定是否重放原请求。当前声明式插件运行时能复用同一幂等键进行有限创建重试，但不能表达“先调用 receipts，再决定是否重试”的跨 endpoint 分支。因此本插件没有伪造声明该回查能力；要完整实现它，需要扩展宿主运行时或增加 host-backed adapter。\n\n插件不调用真实收费接口。开发和测试应使用模拟 HTTP 响应，不记录 API Key、完整签名 URL 或 Base64 正文。\n\n<!-- YINGCE_MANIFEST_CONTRACT_START -->\n## Manifest 完整接口定义\n\n以下 JSON 与插件包内实际 `manifest.json` 逐字段一致，覆盖插件身份、权限、配置、鉴权、参数、校验、创建、Agent、查询、取消、结果下载、响应和 Agent 响应映射。`documentation` 字段的值就是当前完整文档；为避免文档在自身内部无限递归，JSON 中仅用等义占位文本表示正文。\n\n```json\n{\n  \"apiVersion\": \"yingce.plugin/v2\",\n  \"id\": \"mili-bd-seedance25\",\n  \"name\": \"米粒 BD Seedance2.5\",\n  \"version\": \"2.0.0\",\n  \"author\": \"影策\",\n  \"description\": \"米粒 bd-seedance2.5 视频生成插件，支持文字和多模态参考素材。\",\n  \"permissions\": [\n    \"generation.run\",\n    \"media.read\"\n  ],\n  \"configuration\": {\n    \"fields\": [\n      {\n        \"name\": \"apiKey\",\n        \"type\": \"secret\",\n        \"label\": \"API Key\",\n        \"required\": true\n      }\n    ]\n  },\n  \"contributes\": {\n    \"providers\": [\n      {\n        \"id\": \"mili-bd-seedance25\",\n        \"label\": \"米粒 BD Seedance2.5\",\n        \"capabilities\": [\n          \"video\"\n        ],\n        \"scopes\": [\n          \"admin.system-channel\",\n          \"user.custom-channel\",\n          \"canvas\",\n          \"creation\",\n          \"agent\"\n        ],\n        \"baseUrl\": \"https://miliapi.com\",\n        \"idempotentCreate\": true,\n        \"auth\": {\n          \"type\": \"bearer\",\n          \"field\": \"apiKey\"\n        },\n        \"parameters\": [\n          {\n            \"name\": \"model\",\n            \"type\": \"string\",\n            \"required\": false,\n            \"mapping\": \"model\",\n            \"description\": \"可选模型名；按填写值原样发送给上游，不限制可用名称；未填写时默认 bd-seedance2.5。\"\n          },\n          {\n            \"name\": \"prompt\",\n            \"type\": \"string\",\n            \"required\": true,\n            \"mapping\": \"prompt\",\n            \"description\": \"1-45000 字符的视频描述，可用 @图片1、@视频1、@音频1 引用同类素材。\"\n          },\n          {\n            \"name\": \"duration\",\n            \"type\": \"integer\",\n            \"mapping\": \"seconds\",\n            \"description\": \"输出秒数；纯文字或不超过 9 张图片时 4-30 秒，含音视频或超过 9 张图片时 5-30 秒。\"\n          },\n          {\n            \"name\": \"aspectRatio\",\n            \"type\": \"string\",\n            \"mapping\": \"ratio\",\n            \"values\": [\n              \"auto\",\n              \"16:9\",\n              \"9:16\",\n              \"1:1\",\n              \"4:3\",\n              \"3:4\",\n              \"21:9\"\n            ],\n            \"description\": \"画幅比例，默认 auto。\"\n          },\n          {\n            \"name\": \"resolution\",\n            \"type\": \"string\",\n            \"mapping\": \"resolution\",\n            \"values\": [\n              \"720p\"\n            ],\n            \"description\": \"固定为 720p。\"\n          },\n          {\n            \"name\": \"images\",\n            \"type\": \"media[]\",\n            \"mapping\": \"images\",\n            \"description\": \"最多 30 张图片参考素材。\"\n          },\n          {\n            \"name\": \"videos\",\n            \"type\": \"media[]\",\n            \"mapping\": \"videos\",\n            \"description\": \"最多 10 段视频参考素材。\"\n          },\n          {\n            \"name\": \"audios\",\n            \"type\": \"media[]\",\n            \"mapping\": \"audios\",\n            \"description\": \"最多 10 段音频参考素材。\"\n          }\n        ],\n        \"validations\": [\n          {\n            \"assert\": {\n              \"$and\": [\n                {\n                  \"$gt\": [\n                    {\n                      \"$len\": {\n                        \"$trim\": {\n                          \"$ref\": \"request.prompt\"\n                        }\n                      }\n                    },\n                    0\n                  ]\n                },\n                {\n                  \"$lte\": [\n                    {\n                      \"$len\": {\n                        \"$ref\": \"request.prompt\"\n                      }\n                    },\n                    45000\n                  ]\n                }\n              ]\n            },\n            \"message\": \"米粒提示词应为 1-45000 个字符\"\n          },\n          {\n            \"assert\": {\n              \"$or\": [\n                {\n                  \"$eq\": [\n                    {\n                      \"$ref\": \"request.duration\"\n                    },\n                    0\n                  ]\n                },\n                {\n                  \"$and\": [\n                    {\n                      \"$gte\": [\n                        {\n                          \"$ref\": \"request.duration\"\n                        },\n                        4\n                      ]\n                    },\n                    {\n                      \"$lte\": [\n                        {\n                          \"$ref\": \"request.duration\"\n                        },\n                        30\n                      ]\n                    }\n                  ]\n                }\n              ]\n            },\n            \"message\": \"米粒纯文字或少量图片时长应为 4-30 秒\"\n          },\n          {\n            \"assert\": {\n              \"$or\": [\n                {\n                  \"$and\": [\n                    {\n                      \"$eq\": [\n                        {\n                          \"$len\": {\n                            \"$ref\": \"request.videos\"\n                          }\n                        },\n                        0\n                      ]\n                    },\n                    {\n                      \"$eq\": [\n                        {\n                          \"$len\": {\n                            \"$ref\": \"request.audios\"\n                          }\n                        },\n                        0\n                      ]\n                    },\n                    {\n                      \"$lte\": [\n                        {\n                          \"$len\": {\n                            \"$ref\": \"request.images\"\n                          }\n                        },\n                        9\n                      ]\n                    }\n                  ]\n                },\n                {\n                  \"$or\": [\n                    {\n                      \"$eq\": [\n                        {\n                          \"$ref\": \"request.duration\"\n                        },\n                        0\n                      ]\n                    },\n                    {\n                      \"$and\": [\n                        {\n                          \"$gte\": [\n                            {\n                              \"$ref\": \"request.duration\"\n                            },\n                            5\n                          ]\n                        },\n                        {\n                          \"$lte\": [\n                            {\n                              \"$ref\": \"request.duration\"\n                            },\n                            30\n                          ]\n                        }\n                      ]\n                    }\n                  ]\n                }\n              ]\n            },\n            \"message\": \"含音视频或超过 9 张图片时，米粒时长应为 5-30 秒\"\n          },\n          {\n            \"assert\": {\n              \"$lte\": [\n                {\n                  \"$len\": {\n                    \"$ref\": \"request.images\"\n                  }\n                },\n                30\n              ]\n            },\n            \"message\": \"米粒最多接收 30 张图片\"\n          },\n          {\n            \"assert\": {\n              \"$lte\": [\n                {\n                  \"$len\": {\n                    \"$ref\": \"request.videos\"\n                  }\n                },\n                10\n              ]\n            },\n            \"message\": \"米粒最多接收 10 段视频\"\n          },\n          {\n            \"assert\": {\n              \"$lte\": [\n                {\n                  \"$len\": {\n                    \"$ref\": \"request.audios\"\n                  }\n                },\n                10\n              ]\n            },\n            \"message\": \"米粒最多接收 10 段音频\"\n          },\n          {\n            \"assert\": {\n              \"$lte\": [\n                {\n                  \"$add\": [\n                    {\n                      \"$len\": {\n                        \"$ref\": \"request.images\"\n                      }\n                    },\n                    {\n                      \"$len\": {\n                        \"$ref\": \"request.videos\"\n                      }\n                    },\n                    {\n                      \"$len\": {\n                        \"$ref\": \"request.audios\"\n                      }\n                    }\n                  ]\n                },\n                30\n              ]\n            },\n            \"message\": \"米粒混合参考素材总数不能超过 30 个\"\n          },\n          {\n            \"assert\": {\n              \"$in\": [\n                {\n                  \"$lower\": {\n                    \"$trim\": {\n                      \"$coalesce\": [\n                        {\n                          \"$ref\": \"request.resolution\"\n                        },\n                        \"720p\"\n                      ]\n                    }\n                  }\n                },\n                [\n                  \"720p\"\n                ]\n              ]\n            },\n            \"message\": \"米粒仅支持 720p\"\n          },\n          {\n            \"assert\": {\n              \"$in\": [\n                {\n                  \"$lower\": {\n                    \"$trim\": {\n                      \"$coalesce\": [\n                        {\n                          \"$ref\": \"request.aspectRatio\"\n                        },\n                        \"auto\"\n                      ]\n                    }\n                  }\n                },\n                [\n                  \"auto\",\n                  \"16:9\",\n                  \"9:16\",\n                  \"1:1\",\n                  \"4:3\",\n                  \"3:4\",\n                  \"21:9\"\n                ]\n              ]\n            },\n            \"message\": \"米粒画幅仅支持 auto、16:9、9:16、1:1、4:3、3:4 或 21:9\"\n          }\n        ],\n        \"create\": {\n          \"method\": \"POST\",\n          \"path\": \"/v1/videos\",\n          \"contentType\": \"application/json\",\n          \"headers\": {\n            \"Idempotency-Key\": {\n              \"$ref\": \"request.extra.idempotencyKey\"\n            }\n          },\n          \"body\": {\n            \"model\": {\n              \"$coalesce\": [\n                {\n                  \"$ref\": \"request.model\"\n                },\n                \"bd-seedance2.5\"\n              ]\n            },\n            \"prompt\": {\n              \"$ref\": \"request.prompt\"\n            },\n            \"seconds\": {\n              \"$if\": {\n                \"condition\": {\n                  \"$eq\": [\n                    {\n                      \"$ref\": \"request.duration\"\n                    },\n                    0\n                  ]\n                },\n                \"then\": 30,\n                \"else\": {\n                  \"$ref\": \"request.duration\"\n                }\n              }\n            },\n            \"ratio\": {\n              \"$coalesce\": [\n                {\n                  \"$lower\": {\n                    \"$trim\": {\n                      \"$ref\": \"request.aspectRatio\"\n                    }\n                  }\n                },\n                \"auto\"\n              ]\n            },\n            \"resolution\": \"720p\",\n            \"images\": {\n              \"$omitEmpty\": {\n                \"$map\": {\n                  \"from\": {\n                    \"$ref\": \"request.images\"\n                  },\n                  \"as\": \"media\",\n                  \"in\": {\n                    \"$omitEmpty\": {\n                      \"name\": {\n                        \"$omitEmpty\": {\n                          \"$ref\": \"media.name\"\n                        }\n                      },\n                      \"url\": {\n                        \"$omitEmpty\": {\n                          \"$ref\": \"media.url\"\n                        }\n                      },\n                      \"data\": {\n                        \"$omitEmpty\": {\n                          \"$dataPayload\": {\n                            \"$ref\": \"media.dataUrl\"\n                          }\n                        }\n                      }\n                    }\n                  }\n                }\n              }\n            },\n            \"videos\": {\n              \"$omitEmpty\": {\n                \"$map\": {\n                  \"from\": {\n                    \"$ref\": \"request.videos\"\n                  },\n                  \"as\": \"media\",\n                  \"in\": {\n                    \"$omitEmpty\": {\n                      \"name\": {\n                        \"$omitEmpty\": {\n                          \"$ref\": \"media.name\"\n                        }\n                      },\n                      \"url\": {\n                        \"$omitEmpty\": {\n                          \"$ref\": \"media.url\"\n                        }\n                      },\n                      \"data\": {\n                        \"$omitEmpty\": {\n                          \"$dataPayload\": {\n                            \"$ref\": \"media.dataUrl\"\n                          }\n                        }\n                      },\n                      \"seconds\": {\n                        \"$omitEmpty\": {\n                          \"$toFloat\": {\n                            \"$coalesce\": [\n                              {\n                                \"$ref\": \"media.metadata.seconds\"\n                              },\n                              {\n                                \"$divide\": [\n                                  {\n                                    \"$ref\": \"media.metadata.durationMs\"\n                                  },\n                                  1000\n                                ]\n                              }\n                            ]\n                          }\n                        }\n                      }\n                    }\n                  }\n                }\n              }\n            },\n            \"audios\": {\n              \"$omitEmpty\": {\n                \"$map\": {\n                  \"from\": {\n                    \"$ref\": \"request.audios\"\n                  },\n                  \"as\": \"media\",\n                  \"in\": {\n                    \"$omitEmpty\": {\n                      \"name\": {\n                        \"$omitEmpty\": {\n                          \"$ref\": \"media.name\"\n                        }\n                      },\n                      \"url\": {\n                        \"$omitEmpty\": {\n                          \"$ref\": \"media.url\"\n                        }\n                      },\n                      \"data\": {\n                        \"$omitEmpty\": {\n                          \"$dataPayload\": {\n                            \"$ref\": \"media.dataUrl\"\n                          }\n                        }\n                      },\n                      \"seconds\": {\n                        \"$omitEmpty\": {\n                          \"$toFloat\": {\n                            \"$coalesce\": [\n                              {\n                                \"$ref\": \"media.metadata.seconds\"\n                              },\n                              {\n                                \"$divide\": [\n                                  {\n                                    \"$ref\": \"media.metadata.durationMs\"\n                                  },\n                                  1000\n                                ]\n                              }\n                            ]\n                          }\n                        }\n                      }\n                    }\n                  }\n                }\n              }\n            }\n          }\n        },\n        \"poll\": {\n          \"method\": \"GET\",\n          \"path\": \"/v1/videos/{{taskId}}\"\n        },\n        \"result\": {\n          \"method\": \"GET\",\n          \"path\": \"/v1/videos/{{taskId}}/content\",\n          \"query\": {\n            \"download\": [\n              \"1\"\n            ]\n          },\n          \"headers\": {\n            \"Accept\": \"video/mp4\"\n          }\n        },\n        \"response\": {\n          \"taskId\": {\n            \"$coalesce\": [\n              {\n                \"$ref\": \"response.id\"\n              },\n              {\n                \"$ref\": \"response.task_id\"\n              },\n              {\n                \"$ref\": \"response.taskId\"\n              },\n              {\n                \"$ref\": \"taskId\"\n              }\n            ]\n          },\n          \"status\": {\n            \"$ref\": \"response.status\"\n          },\n          \"message\": {\n            \"$coalesce\": [\n              {\n                \"$ref\": \"response.error.message\"\n              },\n              {\n                \"$ref\": \"response.message\"\n              },\n              {\n                \"$ref\": \"response.error.reason\"\n              }\n            ]\n          },\n          \"resultUrlPaths\": [\n            \"url\",\n            \"video_url\",\n            \"data.url\",\n            \"data.video_url\"\n          ],\n          \"resultKind\": \"video\",\n          \"resultEphemeral\": true,\n          \"usage\": {\n            \"$ref\": \"response.usage\"\n          },\n          \"errorPaths\": [\n            \"error.message\",\n            \"error.reason\"\n          ]\n        }\n      }\n    ]\n  },\n  \"documentation\": \"<当前插件的完整 documentation，由 README.md 与 docs/interface.md 拼接而成；为避免 JSON 递归，此处不重复展开正文。>\"\n}\n```\n<!-- YINGCE_MANIFEST_CONTRACT_END -->\n"
+}

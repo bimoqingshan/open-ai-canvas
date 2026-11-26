@@ -215,9 +215,9 @@ export function WalletTopupPanel({
     }, [focusKind, focusToken]);
 
     useEffect(() => {
-        if (byKind[activeKind]?.length || activeKind === "storage") return;
+        if (loading || byKind[activeKind]?.length || activeKind === "storage") return;
         setActiveKind(byKind.credits.length ? "credits" : "storage");
-    }, [products, activeKind]);
+    }, [loading, products, activeKind]);
 
     useEffect(() => {
         if (selectedProduct?.kind === activeKind) return;

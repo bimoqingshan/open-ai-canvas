@@ -234,6 +234,13 @@
     line-height: 1.5;
 }
 
+.admin-community-challenge-description-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
 .admin-community-review__actions {
     display: flex;
     justify-content: flex-end;
