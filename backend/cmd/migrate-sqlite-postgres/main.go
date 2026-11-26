@@ -514,6 +514,7 @@ func migrations() []tableMigration {
 		migrateTable[model.WorkbenchTool]("workbench_tools"),
 		migrateTable[model.WorkbenchPreset]("workbench_presets"),
 		migrateTable[model.InspirationFeedEntry]("inspiration_feed_entries"),
+		migrateTable[model.Inspiration]("inspirations"),
 		migrateTable[model.CommunityWork]("linghua_community_works"),
 		migrateTable[model.CommunityCategory]("linghua_community_categories"),
 		migrateTable[model.CreatorChallenge]("linghua_creator_challenges"),
