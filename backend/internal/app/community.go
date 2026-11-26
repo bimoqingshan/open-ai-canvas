@@ -238,19 +238,21 @@ func (s *Service) SubmitCommunityWork(actor *model.User, req CommunityWorkSubmis
 		}
 		challengeTitle = challenge.ActivityTag
 	}
+	// 活动投稿必须公开画布，确保活动作品可以被审核和展示。
+	publicCanvas := req.PublicCanvas || challengeID != ""
 
 	work := &model.CommunityWork{
 		ID: kernel.NewID(), UserID: actor.ID, TeamID: teamID, CanvasProjectID: projectID,
 		VideoResourceID: video.ID, CoverResourceID: cover.ID,
 		Title: title, Description: description, CreatorName: firstNonEmpty(strings.TrimSpace(actor.DisplayName), strings.TrimSpace(actor.Username)),
 		SocialURL: socialURL, ChallengeID: challengeID, ChallengeTitle: challengeTitle,
-		TrackID: trackID, TrackTitle: trackTitle, PublicCanvas: req.PublicCanvas,
+		TrackID: trackID, TrackTitle: trackTitle, PublicCanvas: publicCanvas,
 		Status: model.CommunityWorkPending, CreatedAt: time.Now().UTC(), UpdatedAt: time.Now().UTC(),
 	}
 	if err := s.repo.CreateCommunityWork(work); err != nil {
 		return nil, fmt.Errorf("提交社区作品失败：%w", err)
 	}
-	if req.PublicCanvas {
+	if publicCanvas {
 		_, shareErr := s.CreateCanvasShare(actor.ID, projectID, CanvasShareRequest{ExpiresDays: 0})
 		if shareErr != nil {
 			_ = s.repo.DeleteCommunityWork(work.ID)

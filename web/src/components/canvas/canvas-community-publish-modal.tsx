@@ -299,6 +299,7 @@ export function CanvasCommunityPublishModal({ projectId, projectOptions, teamId,
                                             onChange={(value) => {
                                                 setChallengeId(value);
                                                 setTrackId(undefined);
+                                                setPublicCanvas(Boolean(value));
                                             }}
                                         />
                                     </label>
@@ -316,7 +317,7 @@ export function CanvasCommunityPublishModal({ projectId, projectOptions, teamId,
                                         <strong>公开画布</strong>
                                         <span>创建长期有效的只读分享链接</span>
                                     </div>
-                                    <Switch checked={publicCanvas} onChange={setPublicCanvas} aria-label="公开画布" />
+                                    <Switch checked={Boolean(challengeId) || publicCanvas} disabled={Boolean(challengeId)} onChange={setPublicCanvas} aria-label="公开画布" />
                                 </div>
                                 <div className="community-publish-terms">
                                     <Checkbox checked={termsAccepted} onChange={(event) => setTermsAccepted(event.target.checked)}>
